@@ -81,16 +81,16 @@ CREATE TABLE agendamento_servico (
 		CHECK (valor_praticado >= 0)
 );
 CREATE TABLE colaborador (
-	id_colaborador INT AUTO_INCREMENT PRIMARY KEY,
+    id_colaborador INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
-    cargo VARCHAR(60) NOT NULL,
+    cargo VARCHAR(100) NOT NULL,
     nivel_acesso ENUM(
-		'ADMINISTRADOR',
+        'ADMINISTRADOR',
         'ATENDENTE',
         'OPERACIONAL'
-	) NOT NULL DEFAULT 'OPERACIONAL',
-    email VARCHAR(150) NOT NULL UNIQUE,
-    senha_hash VARCHAR(255) NOT NULL
+    ) NOT NULL,
+    email VARCHAR(150) NULL UNIQUE,
+    senha_hash VARCHAR(255) NULL
 );
 CREATE TABLE atendimento (
 	id_atendimento INT AUTO_INCREMENT PRIMARY KEY,
