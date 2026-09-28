@@ -98,8 +98,7 @@ CREATE TABLE atendimento (
     status ENUM(
 		'AGUARDANDO',
         'EM_LAVAGEM',
-        'FINALIZADO',
-        'ENTREGUE'
+        'FINALIZADO'
 	) NOT NULL DEFAULT 'AGUARDANDO',
     data_inicio DATETIME,
     data_fim DATETIME,
