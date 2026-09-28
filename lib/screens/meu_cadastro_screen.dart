@@ -1,122 +1,375 @@
 import 'package:flutter/material.dart';
 
-class MeuCadastroScreen extends StatefulWidget {
-    const MeuCadastroScreen({super.key});
+import '../data/sessao_cliente.dart';
+import '../models/cliente.dart';
+import '../services/api_service.dart';
 
-    @override
-    State<MeuCadastroScreen> createState() => _MeuCadastroScreenState();
+class MeuCadastroScreen extends StatefulWidget {
+  const MeuCadastroScreen({super.key});
+
+  @override
+  State<MeuCadastroScreen> createState() =>
+      _MeuCadastroScreenState();
 }
 
-class _MeuCadastroScreenState extends State<MeuCadastroScreen> {
-    final TextEditingController nomeController = TextEditingController();
-    final TextEditingController telefoneController = TextEditingController();
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController cpfController = TextEditingController();
+class _MeuCadastroScreenState
+    extends State<MeuCadastroScreen> {
+  final TextEditingController nomeController =
+      TextEditingController();
 
-    @override
-    void dispose() {
-        nomeController.dispose();
-        telefoneController.dispose();
-        emailController.dispose();
-        cpfController.dispose();
-        super.dispose();
+  final TextEditingController telefoneController =
+      TextEditingController();
+
+  final TextEditingController emailController =
+      TextEditingController();
+
+  final TextEditingController cpfController =
+      TextEditingController();
+
+  bool carregando = true;
+  bool salvando = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    carregarCadastro();
+  }
+
+  // ==========================================
+  // CARREGAR DADOS DO CLIENTE
+  // ==========================================
+
+  Future<void> carregarCadastro() async {
+    try {
+      final Cliente cliente =
+          await ApiService.buscarMeuCadastro();
+
+      SessaoCliente.iniciar(
+        cliente,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      nomeController.text =
+          cliente.nome;
+
+      telefoneController.text =
+          cliente.telefone;
+
+      emailController.text =
+          cliente.email;
+
+      cpfController.text =
+          cliente.cpf;
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      String mensagem =
+          e.toString();
+
+      mensagem = mensagem.replaceFirst(
+        'Exception: ',
+        '',
+      );
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          content: Text(
+            mensagem,
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          carregando = false;
+        });
+      }
+    }
+  }
+
+  // ==========================================
+  // SALVAR ALTERAÇÕES
+  // ==========================================
+
+  Future<void> salvar() async {
+    final String nome =
+        nomeController.text.trim();
+
+    final String telefone =
+        telefoneController.text.trim();
+
+    final String email =
+        emailController.text.trim();
+
+    if (nome.isEmpty ||
+        telefone.isEmpty ||
+        email.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Preencha todos os campos.',
+          ),
+        ),
+      );
+
+      return;
     }
 
-    @override
-    Widget build(BuildContext context) {
-        return Scaffold(
-            appBar: AppBar(
-                title: const Text('Meu Cadastro'),
-            ),
-                body: Center(
-                    child: SingleChildScrollView(
-                        child: Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                TextField(
-                                    controller: nomeController,
-                                    decoration: const InputDecoration(
-                                        labelText: 'Nome',
-                                        prefixIcon: Icon(Icons.person),
-                                        border: OutlineInputBorder(),
-                                    ),
-                                ),
+    setState(() {
+      salvando = true;
+    });
 
-                                const SizedBox(height: 16),
+    try {
+      final Cliente clienteAtualizado =
+          await ApiService
+              .atualizarMeuCadastro(
+        nome: nome,
+        telefone: telefone,
+        email: email,
+      );
 
-                                TextField(
-                                    controller: telefoneController,
-                                    keyboardType: TextInputType.phone,
-                                    decoration: const InputDecoration(
-                                        labelText: 'Telefone',
-                                        prefixIcon: Icon(Icons.phone),
-                                        border: OutlineInputBorder(),
-                                    ),
-                                ),
+      // Atualiza também a sessão local.
+      SessaoCliente.iniciar(
+        clienteAtualizado,
+      );
 
-                                const SizedBox(height: 16),
+      if (!mounted) {
+        return;
+      }
 
-                                TextField(
-                                    controller: emailController,
-                                    keyboardType: TextInputType.emailAddress,
-                                    decoration: const InputDecoration(
-                                        labelText: 'E-mail',
-                                        prefixIcon: Icon(Icons.email),
-                                        border: OutlineInputBorder(),
-                                    ),
-                                ),
+      nomeController.text =
+          clienteAtualizado.nome;
 
-                                const SizedBox(height: 16),
+      telefoneController.text =
+          clienteAtualizado.telefone;
 
-                                TextField(
-                                    controller: cpfController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
-                                        labelText: 'CPF',
-                                        prefixIcon: Icon(Icons.badge),
-                                        border: OutlineInputBorder(),
-                                    ),
-                                ),
+      emailController.text =
+          clienteAtualizado.email;
 
-                                const SizedBox(height: 24),
+      cpfController.text =
+          clienteAtualizado.cpf;
 
-                                SizedBox(
-                                    width: double.infinity,
-                                    height: 50,
-                                    child: ElevatedButton(
-                                        onPressed: () {
-                                            String nome = nomeController.text.trim();
-                                            String telefone = telefoneController.text.trim();
-                                            String email = emailController.text.trim();
-                                            String cpf = cpfController.text.trim();
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Dados atualizados com sucesso!',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
 
-                                            if (nome.isEmpty ||
-                                                telefone.isEmpty ||
-                                                email.isEmpty ||
-                                                cpf.isEmpty) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                        const SnackBar(
-                                                            content: Text('Preencha todos os campos'),
-                                                        ),
-                                                    );
-                                                } else {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
-                                                        content: Text('Dados atualizados com sucesso!'),
-                                                    ),
-                                                );
-                                            }
-                                        },
-                                        child: const Text('Salvar Alterações'),
-                                    ),
-                                ),
-                            ],
+      String mensagem =
+          e.toString();
+
+      mensagem = mensagem.replaceFirst(
+        'Exception: ',
+        '',
+      );
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          content: Text(
+            mensagem,
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          salvando = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    nomeController.dispose();
+    telefoneController.dispose();
+    emailController.dispose();
+    cpfController.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Meu Cadastro',
+        ),
+      ),
+      body: carregando
+          ? const Center(
+              child:
+                  CircularProgressIndicator(),
+            )
+          : Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.all(
+                    24.0,
+                  ),
+                  child: Column(
+                    mainAxisAlignment:
+                        MainAxisAlignment
+                            .center,
+                    children: [
+                      // =========================
+                      // NOME
+                      // =========================
+
+                      TextField(
+                        controller:
+                            nomeController,
+                        enabled: !salvando,
+                        decoration:
+                            const InputDecoration(
+                          labelText: 'Nome',
+                          prefixIcon:
+                              Icon(
+                            Icons.person,
+                          ),
+                          border:
+                              OutlineInputBorder(),
                         ),
-                    ),
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      // =========================
+                      // TELEFONE
+                      // =========================
+
+                      TextField(
+                        controller:
+                            telefoneController,
+                        enabled: !salvando,
+                        keyboardType:
+                            TextInputType
+                                .phone,
+                        decoration:
+                            const InputDecoration(
+                          labelText:
+                              'Telefone',
+                          prefixIcon:
+                              Icon(
+                            Icons.phone,
+                          ),
+                          border:
+                              OutlineInputBorder(),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      // =========================
+                      // E-MAIL
+                      // =========================
+
+                      TextField(
+                        controller:
+                            emailController,
+                        enabled: !salvando,
+                        keyboardType:
+                            TextInputType
+                                .emailAddress,
+                        decoration:
+                            const InputDecoration(
+                          labelText:
+                              'E-mail',
+                          prefixIcon:
+                              Icon(
+                            Icons.email,
+                          ),
+                          border:
+                              OutlineInputBorder(),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      // =========================
+                      // CPF
+                      // =========================
+
+                      TextField(
+                        controller:
+                            cpfController,
+                        readOnly: true,
+                        decoration:
+                            const InputDecoration(
+                          labelText: 'CPF',
+                          prefixIcon:
+                              Icon(
+                            Icons.badge,
+                          ),
+                          border:
+                              OutlineInputBorder(),
+                          helperText:
+                              'O CPF não pode ser alterado.',
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 24,
+                      ),
+
+                      // =========================
+                      // SALVAR
+                      // =========================
+
+                      SizedBox(
+                        width:
+                            double.infinity,
+                        height: 50,
+                        child:
+                            ElevatedButton(
+                          onPressed:
+                              salvando
+                                  ? null
+                                  : salvar,
+                          child: salvando
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child:
+                                      CircularProgressIndicator(
+                                    strokeWidth:
+                                        2.5,
+                                  ),
+                                )
+                              : const Text(
+                                  'Salvar Alterações',
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              ),
             ),
-        );
-    }
+    );
+  }
 }
