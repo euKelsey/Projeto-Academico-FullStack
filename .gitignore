@@ -46,3 +46,16 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Eclipse / Java Web
+web/FastSplashWeb/bin/
+web/FastSplashWeb/target/
+
+# Eclipse workspace
+.metadata/
+
+# Tomcat local
+Servers/
+
+# Arquivos temporários
+*.log
