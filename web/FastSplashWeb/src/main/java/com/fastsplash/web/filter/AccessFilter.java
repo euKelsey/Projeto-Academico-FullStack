@@ -191,6 +191,9 @@ public class AccessFilter implements Filter {
                )
                ||
                caminho.startsWith(
+                     "/api/")
+               ||
+               caminho.startsWith(
                     "/css/"
                )
                ||

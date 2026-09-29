@@ -59,3 +59,6 @@ Servers/
 
 # Arquivos temporários
 *.log
+
+# Build do projeto Web
+web/FastSplashWeb/build/

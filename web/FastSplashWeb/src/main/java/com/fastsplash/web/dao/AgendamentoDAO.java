@@ -9,6 +9,11 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import com.fastsplash.web.model.AgendamentoCliente;
+import com.fastsplash.web.model.Servico;
 
 import com.fastsplash.web.db.Conexao;
 import com.fastsplash.web.model.Agendamento;
@@ -437,6 +442,293 @@ public class AgendamentoDAO {
             comando.executeUpdate();
         }
     }
+
+ // =========================================
+ // READ - AGENDAMENTOS DO CLIENTE
+ // =========================================
+
+ public List<AgendamentoCliente>
+         listarPorCliente(
+         int idCliente
+ ) throws SQLException {
+
+     String sql = """
+             SELECT
+                 a.id_agendamento,
+                 a.id_veiculo,
+                 a.data,
+                 a.horario,
+                 a.status AS status_agendamento,
+
+                 v.marca,
+                 v.modelo,
+                 v.placa,
+                 v.cor,
+
+                 at.status AS status_atendimento,
+
+                 s.id_servico,
+                 s.nome AS nome_servico,
+                 s.descricao,
+
+                 ags.valor_praticado
+
+             FROM agendamento a
+
+             INNER JOIN veiculo v
+                 ON v.id_veiculo =
+                    a.id_veiculo
+
+             LEFT JOIN atendimento at
+                 ON at.id_agendamento =
+                    a.id_agendamento
+
+             LEFT JOIN agendamento_servico ags
+                 ON ags.id_agendamento =
+                    a.id_agendamento
+
+             LEFT JOIN servico s
+                 ON s.id_servico =
+                    ags.id_servico
+
+             WHERE v.id_cliente = ?
+
+             ORDER BY
+                 a.data DESC,
+                 a.horario DESC,
+                 a.id_agendamento DESC,
+                 s.nome
+             """;
+
+
+     Map<Integer, AgendamentoCliente> mapa =
+             new LinkedHashMap<>();
+
+
+     try (
+         Connection conexao =
+                 Conexao.conectar();
+
+         PreparedStatement comando =
+                 conexao.prepareStatement(sql)
+     ) {
+
+         comando.setInt(
+                 1,
+                 idCliente
+         );
+
+
+         try (
+             ResultSet resultado =
+                     comando.executeQuery()
+         ) {
+
+             while (resultado.next()) {
+
+                 int idAgendamento =
+                         resultado.getInt(
+                                 "id_agendamento"
+                         );
+
+
+                 AgendamentoCliente item =
+                         mapa.get(
+                                 idAgendamento
+                         );
+
+
+                 if (item == null) {
+
+                     item =
+                             new AgendamentoCliente();
+
+
+                     item.setIdAgendamento(
+                             idAgendamento
+                     );
+
+
+                     item.setIdVeiculo(
+                             resultado.getInt(
+                                     "id_veiculo"
+                             )
+                     );
+
+
+                     item.setData(
+                             resultado
+                                 .getDate("data")
+                                 .toLocalDate()
+                     );
+
+
+                     item.setHorario(
+                             resultado
+                                 .getTime("horario")
+                                 .toLocalTime()
+                     );
+
+
+                     item.setStatusAgendamento(
+                             resultado.getString(
+                                     "status_agendamento"
+                             )
+                     );
+
+
+                     item.setStatusAtendimento(
+                             resultado.getString(
+                                     "status_atendimento"
+                             )
+                     );
+
+
+                     item.setMarca(
+                             resultado.getString(
+                                     "marca"
+                             )
+                     );
+
+
+                     item.setModelo(
+                             resultado.getString(
+                                     "modelo"
+                             )
+                     );
+
+
+                     item.setPlaca(
+                             resultado.getString(
+                                     "placa"
+                             )
+                     );
+
+
+                     item.setCor(
+                             resultado.getString(
+                                     "cor"
+                             )
+                     );
+
+
+                     mapa.put(
+                             idAgendamento,
+                             item
+                     );
+                 }
+
+
+                 int idServico =
+                         resultado.getInt(
+                                 "id_servico"
+                         );
+
+
+                 if (!resultado.wasNull()) {
+
+                     Servico servico =
+                             new Servico();
+
+
+                     servico.setIdServico(
+                             idServico
+                     );
+
+
+                     servico.setNome(
+                             resultado.getString(
+                                     "nome_servico"
+                             )
+                     );
+
+
+                     servico.setDescricao(
+                             resultado.getString(
+                                     "descricao"
+                             )
+                     );
+
+
+                     // Valor histórico do momento
+                     // em que foi agendado.
+                     servico.setPreco(
+                             resultado.getDouble(
+                                     "valor_praticado"
+                             )
+                     );
+
+
+                     item.getServicos()
+                         .add(
+                             servico
+                         );
+                 }
+             }
+         }
+     }
+
+
+     return new ArrayList<>(
+             mapa.values()
+     );
+ }
+
+//=========================================
+//CANCELAR PELO CLIENTE
+//=========================================
+
+public boolean cancelarDoCliente(
+      int idAgendamento,
+      int idCliente
+) throws SQLException {
+
+  String sql = """
+          UPDATE agendamento a
+
+          INNER JOIN veiculo v
+              ON v.id_veiculo =
+                 a.id_veiculo
+
+          LEFT JOIN atendimento at
+              ON at.id_agendamento =
+                 a.id_agendamento
+
+          SET a.status = 'CANCELADO'
+
+          WHERE a.id_agendamento = ?
+            AND v.id_cliente = ?
+            AND a.status = 'AGENDADO'
+            AND at.id_atendimento IS NULL
+          """;
+
+
+  try (
+      Connection conexao =
+              Conexao.conectar();
+
+      PreparedStatement comando =
+              conexao.prepareStatement(sql)
+  ) {
+
+      comando.setInt(
+              1,
+              idAgendamento
+      );
+
+      comando.setInt(
+              2,
+              idCliente
+      );
+
+
+      int linhas =
+              comando.executeUpdate();
+
+
+      return linhas > 0;
+  }
+}
 
 
     // =========================================
