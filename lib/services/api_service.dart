@@ -9,7 +9,12 @@ import '../models/agendamento.dart';
 import '../models/pagamento.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8080/FastSplashWeb';
+  static const String baseUrl =
+    String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue:
+      'http://10.0.2.2:8080/FastSplashWeb',
+);
 
   static String? _cookieSessao;
 
