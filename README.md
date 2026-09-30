@@ -151,6 +151,8 @@ Projeto-Academico-FullStack/
 │               ├── java/
 │               └── webapp/
 │
+├── iniciar_emulador.bat
+├── iniciar_celular.bat
 ├── pubspec.yaml
 └── README.md
 ```
@@ -286,6 +288,159 @@ Para o funcionamento correto:
 - o Tomcat deve estar iniciado;
 - celular e computador devem estar na mesma rede;
 - a porta utilizada pelo Tomcat deve estar acessível na rede local.
+
+---
+
+## Scripts de desenvolvimento no Windows
+
+Para facilitar a execução do aplicativo durante o desenvolvimento, o projeto possui dois scripts `.bat` na raiz do repositório:
+
+```text
+iniciar_emulador.bat
+iniciar_celular.bat
+```
+
+Esses arquivos automatizam comandos que normalmente precisariam ser executados manualmente no terminal.
+
+### `iniciar_emulador.bat`
+
+O script `iniciar_emulador.bat` é utilizado para iniciar um emulador Android e executar o projeto Flutter automaticamente.
+
+No início do arquivo existe a variável:
+
+```bat
+set "EMULADOR=teste"
+```
+
+O valor deve corresponder ao nome de um emulador existente na máquina.
+
+Os emuladores cadastrados podem ser consultados com:
+
+```bash
+flutter emulators
+```
+
+Caso o nome do emulador seja diferente em outro computador, basta alterar somente essa variável.
+
+Exemplo:
+
+```bat
+set "EMULADOR=Pixel_7_API_35"
+```
+
+O script realiza, de forma automática:
+
+```text
+verifica se o emulador informado existe
+        ↓
+inicia o emulador
+        ↓
+localiza o ADB
+        ↓
+aguarda o dispositivo ficar disponível
+        ↓
+aguarda o Android terminar a inicialização
+        ↓
+executa flutter run
+```
+
+Também existe um limite de tempo para a inicialização. Se o emulador não ficar disponível ou o Android não concluir o boot dentro do período definido, o script apresenta uma mensagem de erro e tenta encerrar o emulador automaticamente.
+
+O tempo máximo pode ser alterado pela variável:
+
+```bat
+set "TEMPO_MAXIMO=60"
+```
+
+Enquanto o `flutter run` estiver ativo, a janela do CMD aberta pelo script deve permanecer aberta.
+
+Nessa janela podem ser utilizados os comandos do Flutter, por exemplo:
+
+```text
+r  → Hot Reload
+R  → Hot Restart
+q  → Encerrar flutter run
+h  → Exibir ajuda
+```
+
+O terminal do Visual Studio Code continua disponível normalmente para comandos como Git, `flutter analyze` e outras tarefas de desenvolvimento.
+
+---
+
+### `iniciar_celular.bat`
+
+O script `iniciar_celular.bat` é utilizado para executar a aplicação em um celular Android físico conectado ao computador.
+
+Antes de utilizá-lo, é necessário configurar a variável:
+
+```bat
+set "IP_PC=SEU_IP_AQUI"
+```
+
+Exemplo:
+
+```bat
+set "IP_PC=192.168.0.25"
+```
+
+O IPv4 atual do computador pode ser consultado no Windows com:
+
+```bash
+ipconfig
+```
+
+O script:
+
+```text
+localiza o ADB
+        ↓
+verifica se existe um celular físico autorizado
+        ↓
+mostra o IP configurado para o backend
+        ↓
+executa flutter run com API_BASE_URL
+```
+
+O comando executado utiliza o endereço configurado em `IP_PC`:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://IP_DO_PC:8080/FastSplashWeb
+```
+
+Para funcionar corretamente:
+
+- o celular deve estar conectado por USB;
+- a Depuração USB deve estar ativada;
+- o computador deve estar autorizado no celular;
+- o cabo USB deve permitir transferência de dados;
+- o computador e o celular devem estar na mesma rede local para acesso ao backend;
+- o Tomcat deve estar iniciado;
+- o MySQL deve estar em execução.
+
+Se o IPv4 do computador mudar, não é necessário alterar o código Flutter. Basta atualizar esta linha do script:
+
+```bat
+set "IP_PC=NOVO_IP"
+```
+
+---
+
+### Por que existem dois scripts?
+
+Os dois arquivos foram mantidos separados porque os fluxos são diferentes:
+
+```text
+iniciar_emulador.bat
+→ inicia e aguarda um emulador Android
+→ executa flutter run
+
+iniciar_celular.bat
+→ verifica um dispositivo físico conectado
+→ configura o endereço do backend pelo IP do computador
+→ executa flutter run
+```
+
+Essa separação mantém os scripts simples, facilita a manutenção e permite reutilizá-los em outros computadores alterando apenas as variáveis necessárias.
 
 ---
 
