@@ -246,7 +246,7 @@ INSERT INTO atendimento (
 ),
 (
     3,
-    'ENTREGUE',
+    'FINALIZADO',
     '2026-09-16 14:05:00',
     '2026-09-16 15:40:00'
 );
