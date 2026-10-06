@@ -62,3 +62,6 @@ Servers/
 
 # Build do projeto Web
 web/FastSplashWeb/build/
+
+# VS code
+.vscode/
