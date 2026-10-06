@@ -177,38 +177,48 @@ public class AccessFilter implements Filter {
     // =========================================
     // ROTAS PÚBLICAS
     // =========================================
-
     private boolean rotaPublica(
-            String caminho
+                String caminho
     ) {
 
         return caminho.equals(
-                    "/login"
-               )
-               ||
-               caminho.equals(
-                    "/login.jsp"
-               )
-               ||
-               caminho.startsWith(
-                     "/api/")
-               ||
-               caminho.startsWith(
-                    "/css/"
-               )
-               ||
-               caminho.startsWith(
-                    "/js/"
-               )
-               ||
-               caminho.startsWith(
-                    "/images/"
-               )
-               ||
-               caminho.startsWith(
-                    "/favicon"
-               );
+                "/"
+           )
+           ||
+           caminho.equals(
+                "/index.jsp"
+           )
+           ||
+           caminho.equals(
+                "/login"
+           )
+           ||
+           caminho.equals(
+                "/login.jsp"
+           )
+           ||
+           caminho.startsWith(
+                "/api/"
+           )
+           ||
+           caminho.startsWith(
+                "/css/"
+           )
+           ||
+           caminho.startsWith(
+                "/js/"
+           )
+           ||
+           caminho.startsWith(
+                "/img/"
+           )
+           ||
+           caminho.startsWith(
+                "/favicon"
+           );
     }
+    
+    
 
 
     // =========================================
