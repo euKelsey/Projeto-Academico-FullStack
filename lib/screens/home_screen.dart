@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/sessao_cliente.dart';
 import '../models/agendamento.dart';
 import '../services/api_service.dart';
+import '../theme/theme_controller.dart';
 
 import 'agendamento_screen.dart';
 import 'historico_servicos_screen.dart';
@@ -12,15 +13,19 @@ import 'pagamentos_screen.dart';
 import 'status_servico_screen.dart';
 import 'veiculos_screen.dart';
 
+
 class HomeScreen extends StatefulWidget {
+
   const HomeScreen({
     super.key,
   });
+
 
   @override
   State<HomeScreen> createState() =>
       _HomeScreenState();
 }
+
 
 class _HomeScreenState
     extends State<HomeScreen> {
@@ -30,31 +35,38 @@ class _HomeScreenState
   bool carregando = true;
 
 
+  // =====================================================
+  // INICIAR TELA
+  // =====================================================
+
   @override
   void initState() {
+
     super.initState();
 
     carregarHome();
   }
 
 
-  // ==========================================
-  // CARREGAR DADOS
-  // ==========================================
+  // =====================================================
+  // CARREGAR AGENDAMENTOS
+  // =====================================================
 
   Future<void> carregarHome() async {
 
     try {
 
       final resultado =
-          await ApiService
-              .listarAgendamentos();
+          await ApiService.listarAgendamentos();
+
 
       if (!mounted) {
         return;
       }
 
+
       setState(() {
+
         agendamentos = resultado;
       });
 
@@ -64,6 +76,7 @@ class _HomeScreenState
         return;
       }
 
+
       mostrarErro(e);
 
     } finally {
@@ -71,6 +84,7 @@ class _HomeScreenState
       if (mounted) {
 
         setState(() {
+
           carregando = false;
         });
       }
@@ -78,28 +92,32 @@ class _HomeScreenState
   }
 
 
-  // ==========================================
+  // =====================================================
   // PRÓXIMO AGENDAMENTO
-  // ==========================================
+  // =====================================================
 
-  Agendamento?
-      get proximoAgendamento {
+  Agendamento? get proximoAgendamento {
 
-    final List<Agendamento>
-        ativos =
+    final List<Agendamento> ativos =
         agendamentos
             .where(
-              (agendamento) =>
-                  agendamento.status !=
-                      'Finalizado'
-                  &&
-                  agendamento.status !=
-                      'Cancelado',
+              (agendamento) {
+
+                final String status =
+                    agendamento.status
+                        .toUpperCase();
+
+
+                return status != 'FINALIZADO'
+                    && status != 'CANCELADO'
+                    && status != 'CONCLUIDO';
+              },
             )
             .toList();
 
 
     if (ativos.isEmpty) {
+
       return null;
     }
 
@@ -107,20 +125,14 @@ class _HomeScreenState
     ativos.sort(
       (a, b) {
 
-        final DateTime dataA =
-            _converterDataHora(
+        return converterDataHora(
           a.data,
           a.horario,
-        );
-
-        final DateTime dataB =
-            _converterDataHora(
-          b.data,
-          b.horario,
-        );
-
-        return dataA.compareTo(
-          dataB,
+        ).compareTo(
+          converterDataHora(
+            b.data,
+            b.horario,
+          ),
         );
       },
     );
@@ -130,41 +142,69 @@ class _HomeScreenState
   }
 
 
-  DateTime _converterDataHora(
+  DateTime converterDataHora(
     String data,
     String horario,
   ) {
 
-    final partesData =
-        data.split('-');
+    try {
 
-    final partesHorario =
-        horario.split(':');
+      final partesData =
+          data.split('-');
+
+      final partesHorario =
+          horario.split(':');
 
 
-    return DateTime(
-      int.parse(
-        partesData[0],
-      ),
-      int.parse(
-        partesData[1],
-      ),
-      int.parse(
-        partesData[2],
-      ),
-      int.parse(
-        partesHorario[0],
-      ),
-      int.parse(
-        partesHorario[1],
-      ),
-    );
+      return DateTime(
+        int.parse(partesData[0]),
+        int.parse(partesData[1]),
+        int.parse(partesData[2]),
+        int.parse(partesHorario[0]),
+        int.parse(partesHorario[1]),
+      );
+
+    } catch (_) {
+
+      return DateTime(2100);
+    }
   }
 
 
-  // ==========================================
-  // LOGOUT
-  // ==========================================
+  String formatarData(
+    String data,
+  ) {
+
+    final partes =
+        data.split('-');
+
+
+    if (partes.length != 3) {
+
+      return data;
+    }
+
+
+    return '${partes[2]}/${partes[1]}/${partes[0]}';
+  }
+
+
+  String formatarStatus(
+    String status,
+  ) {
+
+    return status
+        .replaceAll(
+          '_',
+          ' ',
+        )
+        .toUpperCase();
+  }
+
+
+  // =====================================================
+  // SAIR
+  // =====================================================
 
   Future<void> sair() async {
 
@@ -189,23 +229,21 @@ class _HomeScreenState
   }
 
 
-  // ==========================================
-  // ERRO
-  // ==========================================
+  // =====================================================
+  // MOSTRAR ERRO
+  // =====================================================
 
   void mostrarErro(
     Object erro,
   ) {
 
-    String mensagem =
-        erro.toString();
-
-
-    mensagem =
-        mensagem.replaceFirst(
-      'Exception: ',
-      '',
-    );
+    final String mensagem =
+        erro
+            .toString()
+            .replaceFirst(
+              'Exception: ',
+              '',
+            );
 
 
     ScaffoldMessenger.of(context)
@@ -219,77 +257,103 @@ class _HomeScreenState
   }
 
 
-  // ==========================================
+  // =====================================================
   // CARD PRÓXIMO AGENDAMENTO
-  // ==========================================
+  // =====================================================
 
   Widget cardProximoAgendamento(
     Agendamento? agendamento,
   ) {
 
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
+
+
     if (agendamento == null) {
 
       return Container(
+
         width: double.infinity,
 
         padding:
-            const EdgeInsets.all(
-          20,
-        ),
+            const EdgeInsets.all(20),
 
         decoration:
             BoxDecoration(
+
           color:
-              const Color(
-            0xFF34373C,
-          ),
+              cores.surfaceContainerHighest,
 
           borderRadius:
-              BorderRadius.circular(
-            20,
-          ),
+              BorderRadius.circular(18),
 
           border:
               Border.all(
             color:
-                Colors.white12,
+                cores.outlineVariant,
           ),
         ),
 
         child:
-            const Row(
+            Row(
 
           children: [
 
-            CircleAvatar(
-              radius: 28,
+            Container(
 
-              backgroundColor:
-                  Color(
-                0xFF1F5D8F,
+              width: 52,
+              height: 52,
+
+              decoration:
+                  BoxDecoration(
+
+                borderRadius:
+                    BorderRadius.circular(14),
+
+                gradient:
+                    LinearGradient(
+
+                  begin:
+                      Alignment.topLeft,
+
+                  end:
+                      Alignment.bottomRight,
+
+                  colors: [
+
+                    cores.primary,
+
+                    cores.secondary,
+                  ],
+                ),
               ),
 
               child:
                   Icon(
-                Icons
-                    .calendar_month_outlined,
-                size: 30,
+
+                Icons.calendar_month_outlined,
+
                 color:
-                    Colors.white,
+                    cores.onPrimary,
+
+                size: 27,
               ),
             ),
 
-            SizedBox(
+
+            const SizedBox(
               width: 16,
             ),
 
+
             Expanded(
+
               child:
                   Column(
 
                 crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
+                    CrossAxisAlignment.start,
 
                 children: [
 
@@ -298,18 +362,37 @@ class _HomeScreenState
 
                     style:
                         TextStyle(
-                      fontSize: 18,
+
+                      color:
+                          cores.onSurface,
+
+                      fontSize: 16,
+
                       fontWeight:
-                          FontWeight.bold,
+                          FontWeight.w800,
                     ),
                   ),
 
-                  SizedBox(
-                    height: 6,
+
+                  const SizedBox(
+                    height: 5,
                   ),
 
+
                   Text(
-                    'Você ainda não possui um serviço agendado.',
+                    'Você não possui agendamentos ativos.',
+
+                    style:
+                        TextStyle(
+
+                      color:
+                          cores.onSurface
+                              .withValues(
+                            alpha: 0.60,
+                          ),
+
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
@@ -330,30 +413,44 @@ class _HomeScreenState
 
 
     return Container(
+
       width: double.infinity,
 
       padding:
-          const EdgeInsets.all(
-        20,
-      ),
+          const EdgeInsets.all(20),
 
       decoration:
           BoxDecoration(
+
         color:
-            const Color(
-          0xFF34373C,
-        ),
+            cores.surfaceContainerHighest,
 
         borderRadius:
-            BorderRadius.circular(
-          20,
-        ),
+            BorderRadius.circular(18),
 
         border:
             Border.all(
+
           color:
-              Colors.white12,
+              cores.secondary
+                  .withValues(
+            alpha: 0.25,
+          ),
         ),
+
+        boxShadow: [
+
+          BoxShadow(
+
+            color:
+                cores.primary
+                    .withValues(
+              alpha: 0.08,
+            ),
+
+            blurRadius: 24,
+          ),
+        ],
       ),
 
       child:
@@ -364,29 +461,55 @@ class _HomeScreenState
 
         children: [
 
-          const CircleAvatar(
-            radius: 28,
+          Container(
 
-            backgroundColor:
-                Color(
-              0xFF1F5D8F,
+            width: 52,
+            height: 52,
+
+            decoration:
+                BoxDecoration(
+
+              borderRadius:
+                  BorderRadius.circular(14),
+
+              gradient:
+                  LinearGradient(
+
+                begin:
+                    Alignment.topLeft,
+
+                end:
+                    Alignment.bottomRight,
+
+                colors: [
+
+                  cores.primary,
+
+                  cores.secondary,
+                ],
+              ),
             ),
 
             child:
                 Icon(
-              Icons
-                  .calendar_month_outlined,
-              size: 30,
+
+              Icons.calendar_month_outlined,
+
               color:
-                  Colors.white,
+                  cores.onPrimary,
+
+              size: 27,
             ),
           ),
+
 
           const SizedBox(
             width: 16,
           ),
 
+
           Expanded(
+
             child:
                 Column(
 
@@ -395,51 +518,96 @@ class _HomeScreenState
 
               children: [
 
-                const Text(
+                Text(
                   'Próximo agendamento',
 
                   style:
                       TextStyle(
-                    fontSize: 18,
+
+                    color:
+                        cores.onSurface,
+
+                    fontSize: 16,
+
                     fontWeight:
-                        FontWeight.bold,
+                        FontWeight.w800,
                   ),
                 ),
+
 
                 const SizedBox(
                   height: 8,
                 ),
 
+
                 Text(
                   '${agendamento.veiculo.marca} '
                   '${agendamento.veiculo.modelo}',
+
+                  style:
+                      TextStyle(
+
+                    color:
+                        cores.onSurface,
+
+                    fontWeight:
+                        FontWeight.w700,
+                  ),
                 ),
+
 
                 const SizedBox(
                   height: 4,
                 ),
+
 
                 Text(
                   servicos,
+
+                  style:
+                      TextStyle(
+
+                    color:
+                        cores.onSurface
+                            .withValues(
+                          alpha: 0.72,
+                        ),
+                  ),
                 ),
+
 
                 const SizedBox(
-                  height: 4,
+                  height: 10,
                 ),
 
-                Text(
-                  '${agendamento.data} '
-                  'às '
-                  '${agendamento.horario}',
-                ),
 
-                const SizedBox(
-                  height: 4,
-                ),
+                Wrap(
 
-                Text(
-                  'Status: '
-                  '${agendamento.status}',
+                  spacing: 8,
+
+                  runSpacing: 8,
+
+                  children: [
+
+                    chipInfo(
+                      Icons.event_outlined,
+                      formatarData(
+                        agendamento.data,
+                      ),
+                    ),
+
+                    chipInfo(
+                      Icons.schedule_outlined,
+                      agendamento.horario,
+                    ),
+
+                    chipInfo(
+                      Icons.info_outline,
+                      formatarStatus(
+                        agendamento.status,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -450,100 +618,270 @@ class _HomeScreenState
   }
 
 
-  // ==========================================
-  // CARD MENU
-  // ==========================================
+  // =====================================================
+  // CHIP DE INFORMAÇÃO
+  // =====================================================
+
+  Widget chipInfo(
+    IconData icone,
+    String texto,
+  ) {
+
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
+
+
+    return Container(
+
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 9,
+        vertical: 6,
+      ),
+
+      decoration:
+          BoxDecoration(
+
+        color:
+            cores.secondary
+                .withValues(
+          alpha: 0.08,
+        ),
+
+        borderRadius:
+            BorderRadius.circular(20),
+
+        border:
+            Border.all(
+
+          color:
+              cores.secondary
+                  .withValues(
+            alpha: 0.15,
+          ),
+        ),
+      ),
+
+      child:
+          Row(
+
+        mainAxisSize:
+            MainAxisSize.min,
+
+        children: [
+
+          Icon(
+            icone,
+
+            size: 13,
+
+            color:
+                cores.secondary,
+          ),
+
+
+          const SizedBox(
+            width: 5,
+          ),
+
+
+          Text(
+            texto,
+
+            style:
+                TextStyle(
+
+              color:
+                  cores.onSurface
+                      .withValues(
+                    alpha: 0.78,
+                  ),
+
+              fontSize: 10,
+
+              fontWeight:
+                  FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  // =====================================================
+  // CARD DO MENU
+  // =====================================================
 
   Widget cardMenu({
-    required BuildContext context,
+
     required IconData icone,
-    required String texto,
+
+    required String titulo,
+
+    required String subtitulo,
+
     required VoidCallback onPressed,
   }) {
 
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
+
+
     return InkWell(
+
       borderRadius:
-          BorderRadius.circular(
-        20,
-      ),
+          BorderRadius.circular(18),
 
       onTap:
           onPressed,
 
       child:
-          Container(
+          Ink(
 
         decoration:
             BoxDecoration(
+
           color:
-              const Color(
-            0xFF34373C,
-          ),
+              cores.surfaceContainerHighest,
 
           borderRadius:
-              BorderRadius.circular(
-            20,
-          ),
+              BorderRadius.circular(18),
 
           border:
               Border.all(
             color:
-                Colors.white12,
+                cores.outlineVariant,
           ),
         ),
 
         child:
-            Column(
-
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-
-          children: [
-
-            Icon(
-              icone,
-              size: 40,
-              color:
-                  const Color(
-                0xFF91C4FF,
-              ),
-            ),
-
-            const SizedBox(
-              height: 16,
-            ),
-
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 8,
-              ),
 
-              child:
-                  Text(
-                texto,
+          padding:
+              const EdgeInsets.all(17),
 
-                textAlign:
-                    TextAlign.center,
+          child:
+              Column(
 
-                style:
-                    const TextStyle(
-                  fontSize: 17,
-                  fontWeight:
-                      FontWeight.bold,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+
+            children: [
+
+              Container(
+
+                width: 44,
+                height: 44,
+
+                decoration:
+                    BoxDecoration(
+
+                  borderRadius:
+                      BorderRadius.circular(12),
+
+                  gradient:
+                      LinearGradient(
+
+                    begin:
+                        Alignment.topLeft,
+
+                    end:
+                        Alignment.bottomRight,
+
+                    colors: [
+
+                      cores.primary
+                          .withValues(
+                        alpha: 0.22,
+                      ),
+
+                      cores.secondary
+                          .withValues(
+                        alpha: 0.12,
+                      ),
+                    ],
+                  ),
+                ),
+
+                child:
+                    Icon(
+
+                  icone,
+
+                  color:
+                      cores.secondary,
+
+                  size: 25,
                 ),
               ),
-            ),
-          ],
+
+
+              const SizedBox(
+                height: 16,
+              ),
+
+
+              Text(
+                titulo,
+
+                style:
+                    TextStyle(
+
+                  color:
+                      cores.onSurface,
+
+                  fontSize: 15,
+
+                  fontWeight:
+                      FontWeight.w800,
+                ),
+              ),
+
+
+              const SizedBox(
+                height: 4,
+              ),
+
+
+              Text(
+                subtitulo,
+
+                maxLines: 2,
+
+                overflow:
+                    TextOverflow.ellipsis,
+
+                style:
+                    TextStyle(
+
+                  color:
+                      cores.onSurface
+                          .withValues(
+                        alpha: 0.58,
+                      ),
+
+                  fontSize: 11,
+
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
 
-  // ==========================================
-  // BUILD
-  // ==========================================
+  // =====================================================
+  // TELA
+  // =====================================================
 
   @override
   Widget build(
@@ -552,6 +890,10 @@ class _HomeScreenState
 
     final cliente =
         SessaoCliente.clienteLogado;
+
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
 
 
     return Scaffold(
@@ -562,9 +904,18 @@ class _HomeScreenState
         automaticallyImplyLeading:
             false,
 
+        title:
+            marcaFastSplash(),
+
         actions: [
 
+          seletorTema(),
+
           IconButton(
+
+            tooltip:
+                'Sair',
+
             onPressed:
                 sair,
 
@@ -572,6 +923,11 @@ class _HomeScreenState
                 const Icon(
               Icons.logout,
             ),
+          ),
+
+
+          const SizedBox(
+            width: 6,
           ),
         ],
       ),
@@ -581,6 +937,7 @@ class _HomeScreenState
           carregando
 
               ? const Center(
+
                   child:
                       CircularProgressIndicator(),
                 )
@@ -594,11 +951,17 @@ class _HomeScreenState
                       SingleChildScrollView(
 
                     physics:
-                        const AlwaysScrollableScrollPhysics(),
+                        const AlwaysScrollableScrollPhysics(
+                      parent:
+                          ClampingScrollPhysics(),
+                    ),
 
                     padding:
-                        const EdgeInsets.all(
-                      16,
+                        const EdgeInsets.fromLTRB(
+                      18,
+                      12,
+                      18,
+                      30,
                     ),
 
                     child:
@@ -610,55 +973,83 @@ class _HomeScreenState
                       children: [
 
                         Text(
-                          'Olá, ${cliente?.nome ?? ''}!',
-
-                          style:
-                              const TextStyle(
-                            fontSize: 30,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 8,
-                        ),
-
-                        const Text(
-                          'O que você deseja fazer hoje?',
+                          'Olá, ${cliente?.nome ?? ''}',
 
                           style:
                               TextStyle(
-                            fontSize: 18,
+
+                            color:
+                                cores.onSurface,
+
+                            fontSize: 27,
+
+                            fontWeight:
+                                FontWeight.w900,
+
+                            letterSpacing:
+                                -0.5,
                           ),
                         ),
 
+
                         const SizedBox(
-                          height: 28,
+                          height: 5,
                         ),
+
+
+                        Text(
+                          'Seu Fast Splash está pronto para você.',
+
+                          style:
+                              TextStyle(
+
+                            color:
+                                cores.onSurface
+                                    .withValues(
+                                  alpha: 0.60,
+                                ),
+
+                            fontSize: 14,
+                          ),
+                        ),
+
+
+                        const SizedBox(
+                          height: 24,
+                        ),
+
 
                         cardProximoAgendamento(
                           proximoAgendamento,
                         ),
 
+
                         const SizedBox(
-                          height: 32,
+                          height: 30,
                         ),
 
-                        const Text(
+
+                        Text(
                           'Acessos rápidos',
 
                           style:
                               TextStyle(
-                            fontSize: 20,
+
+                            color:
+                                cores.onSurface,
+
+                            fontSize: 18,
+
                             fontWeight:
-                                FontWeight.bold,
+                                FontWeight.w800,
                           ),
                         ),
 
+
                         const SizedBox(
-                          height: 16,
+                          height: 14,
                         ),
+
 
                         GridView.count(
 
@@ -669,32 +1060,29 @@ class _HomeScreenState
                           physics:
                               const NeverScrollableScrollPhysics(),
 
-                          crossAxisSpacing:
-                              14,
+                          crossAxisSpacing: 12,
 
-                          mainAxisSpacing:
-                              14,
+                          mainAxisSpacing: 12,
 
-                          childAspectRatio:
-                              1.15,
+                          childAspectRatio: 1.02,
 
                           children: [
 
                             cardMenu(
-                              context:
-                                  context,
 
                               icone:
                                   Icons.person_outline,
 
-                              texto:
+                              titulo:
                                   'Meu Cadastro',
+
+                              subtitulo:
+                                  'Dados da sua conta',
 
                               onPressed: () {
 
                                 Navigator.push(
                                   context,
-
                                   MaterialPageRoute(
                                     builder:
                                         (context) =>
@@ -704,21 +1092,22 @@ class _HomeScreenState
                               },
                             ),
 
+
                             cardMenu(
-                              context:
-                                  context,
 
                               icone:
                                   Icons.directions_car_outlined,
 
-                              texto:
+                              titulo:
                                   'Meus Veículos',
+
+                              subtitulo:
+                                  'Cadastre e edite seus carros',
 
                               onPressed: () {
 
                                 Navigator.push(
                                   context,
-
                                   MaterialPageRoute(
                                     builder:
                                         (context) =>
@@ -728,21 +1117,22 @@ class _HomeScreenState
                               },
                             ),
 
+
                             cardMenu(
-                              context:
-                                  context,
 
                               icone:
                                   Icons.calendar_month_outlined,
 
-                              texto:
-                                  'Agendar Serviço',
+                              titulo:
+                                  'Agendar',
+
+                              subtitulo:
+                                  'Escolha serviço, data e horário',
 
                               onPressed: () async {
 
                                 await Navigator.push(
                                   context,
-
                                   MaterialPageRoute(
                                     builder:
                                         (context) =>
@@ -755,21 +1145,22 @@ class _HomeScreenState
                               },
                             ),
 
+
                             cardMenu(
-                              context:
-                                  context,
 
                               icone:
                                   Icons.track_changes_outlined,
 
-                              texto:
-                                  'Acompanhar Serviço',
+                              titulo:
+                                  'Acompanhar',
+
+                              subtitulo:
+                                  'Veja o andamento da lavagem',
 
                               onPressed: () async {
 
                                 await Navigator.push(
                                   context,
-
                                   MaterialPageRoute(
                                     builder:
                                         (context) =>
@@ -782,21 +1173,22 @@ class _HomeScreenState
                               },
                             ),
 
+
                             cardMenu(
-                              context:
-                                  context,
 
                               icone:
                                   Icons.history,
 
-                              texto:
+                              titulo:
                                   'Histórico',
+
+                              subtitulo:
+                                  'Serviços concluídos e cancelados',
 
                               onPressed: () async {
 
                                 await Navigator.push(
                                   context,
-
                                   MaterialPageRoute(
                                     builder:
                                         (context) =>
@@ -809,21 +1201,22 @@ class _HomeScreenState
                               },
                             ),
 
+
                             cardMenu(
-                              context:
-                                  context,
 
                               icone:
-                                  Icons.payment_outlined,
+                                  Icons.payments_outlined,
 
-                              texto:
+                              titulo:
                                   'Pagamentos',
+
+                              subtitulo:
+                                  'Pendências e pagamentos realizados',
 
                               onPressed: () async {
 
                                 await Navigator.push(
                                   context,
-
                                   MaterialPageRoute(
                                     builder:
                                         (context) =>
@@ -841,6 +1234,205 @@ class _HomeScreenState
                     ),
                   ),
                 ),
+    );
+  }
+
+
+  // =====================================================
+  // MARCA FAST SPLASH
+  // =====================================================
+
+  Widget marcaFastSplash() {
+
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
+
+
+    return RichText(
+
+      text:
+          TextSpan(
+
+        style:
+            const TextStyle(
+
+          fontSize: 20,
+
+          fontWeight:
+              FontWeight.w900,
+        ),
+
+        children: [
+
+          TextSpan(
+
+            text:
+                'Fast ',
+
+            style:
+                TextStyle(
+
+              color:
+                  cores.onSurface,
+            ),
+          ),
+
+
+          TextSpan(
+
+            text:
+                'Splash',
+
+            style:
+                TextStyle(
+
+              color:
+                  cores.secondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  // =====================================================
+  // SELETOR DE TEMA
+  // =====================================================
+
+  Widget seletorTema() {
+
+    return ValueListenableBuilder<ThemeMode>(
+
+      valueListenable:
+          themeModeNotifier,
+
+      builder: (
+        context,
+        modo,
+        child,
+      ) {
+
+        IconData icone;
+
+
+        if (modo == ThemeMode.light) {
+
+          icone =
+              Icons.light_mode_outlined;
+
+        } else if (
+            modo == ThemeMode.dark) {
+
+          icone =
+              Icons.dark_mode_outlined;
+
+        } else {
+
+          icone =
+              Icons.brightness_auto_outlined;
+        }
+
+
+        return PopupMenuButton<ThemeMode>(
+
+          tooltip:
+              'Tema',
+
+          onSelected:
+              definirTema,
+
+          icon:
+              Icon(
+            icone,
+          ),
+
+          itemBuilder:
+              (context) {
+
+            return [
+
+              const PopupMenuItem<ThemeMode>(
+
+                value:
+                    ThemeMode.system,
+
+                child:
+                    Row(
+
+                  children: [
+
+                    Icon(
+                      Icons.brightness_auto_outlined,
+                    ),
+
+                    SizedBox(
+                      width: 10,
+                    ),
+
+                    Text(
+                      'Seguir aparelho',
+                    ),
+                  ],
+                ),
+              ),
+
+
+              const PopupMenuItem<ThemeMode>(
+
+                value:
+                    ThemeMode.light,
+
+                child:
+                    Row(
+
+                  children: [
+
+                    Icon(
+                      Icons.light_mode_outlined,
+                    ),
+
+                    SizedBox(
+                      width: 10,
+                    ),
+
+                    Text(
+                      'Tema claro',
+                    ),
+                  ],
+                ),
+              ),
+
+
+              const PopupMenuItem<ThemeMode>(
+
+                value:
+                    ThemeMode.dark,
+
+                child:
+                    Row(
+
+                  children: [
+
+                    Icon(
+                      Icons.dark_mode_outlined,
+                    ),
+
+                    SizedBox(
+                      width: 10,
+                    ),
+
+                    Text(
+                      'Tema escuro',
+                    ),
+                  ],
+                ),
+              ),
+            ];
+          },
+        );
+      },
     );
   }
 }

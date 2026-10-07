@@ -4,42 +4,48 @@ import 'screens/login_screen.dart';
 import 'theme/theme_controller.dart';
 
 void main() {
-  runApp(const LavaRapidoApp());
+  runApp(
+    const FastSplashApp(),
+  );
 }
 
-class LavaRapidoApp extends StatelessWidget {
-  const LavaRapidoApp({super.key});
+class FastSplashApp
+    extends StatelessWidget {
+  const FastSplashApp({
+    super.key,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeModeNotifier,
-      builder: (context, themeMode, child) {
+  Widget build(
+    BuildContext context,
+  ) {
+    return ValueListenableBuilder<
+        ThemeMode>(
+      valueListenable:
+          themeModeNotifier,
+      builder: (
+        context,
+        themeMode,
+        child,
+      ) {
         return MaterialApp(
-          debugShowCheckedModeBanner: false,
+          debugShowCheckedModeBanner:
+              false,
           title: 'Fast Splash',
 
           themeMode: themeMode,
 
-          theme: ThemeData(
-            brightness: Brightness.light,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              brightness: Brightness.light,
-            ),
-            useMaterial3: true,
-          ),
+          theme:
+              FastSplashTheme.lightTheme,
 
-          darkTheme: ThemeData(
-            brightness: Brightness.dark,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              brightness: Brightness.dark,
-            ),
-            useMaterial3: true,
-          ),
+          darkTheme:
+              FastSplashTheme.darkTheme,
 
-          home: const LoginScreen(),
+          scrollBehavior:
+              const FastSplashScrollBehavior(),
+
+          home:
+              const LoginScreen(),
         );
       },
     );

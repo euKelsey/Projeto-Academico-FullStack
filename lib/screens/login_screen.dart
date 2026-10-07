@@ -2,48 +2,32 @@ import 'package:flutter/material.dart';
 
 import '../data/sessao_cliente.dart';
 import '../services/api_service.dart';
+import '../theme/theme_controller.dart';
 
-import 'cadastro_screen.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() =>
-      _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState
-    extends State<LoginScreen> {
-  final TextEditingController emailController =
-      TextEditingController();
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
 
-  final TextEditingController senhaController =
-      TextEditingController();
+  final TextEditingController senhaController = TextEditingController();
 
   bool carregando = false;
-
-  // ==========================================
-  // LOGIN
-  // ==========================================
+  bool ocultarSenha = true;
 
   Future<void> entrar() async {
-    final String email =
-        emailController.text.trim();
+    final String email = emailController.text.trim();
 
-    final String senha =
-        senhaController.text;
+    final String senha = senhaController.text;
 
-    // CAMPOS VAZIOS
     if (email.isEmpty || senha.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Preencha o e-mail e a senha',
-          ),
-        ),
-      );
+      mostrarMensagem('Preencha o e-mail e a senha.');
 
       return;
     }
@@ -53,68 +37,24 @@ class _LoginScreenState
     });
 
     try {
-      // ======================================
-      // CHAMA A API
-      // ======================================
+      final cliente = await ApiService.loginCliente(email: email, senha: senha);
 
-      final cliente =
-          await ApiService.loginCliente(
-        email: email,
-        senha: senha,
-      );
-
-      // ======================================
-      // SALVA CLIENTE LOGADO NO FLUTTER
-      // ======================================
-
-      SessaoCliente.iniciar(
-        cliente,
-      );
+      SessaoCliente.iniciar(cliente);
 
       if (!mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Login realizado com sucesso!',
-          ),
-        ),
-      );
-
-      // ======================================
-      // ABRE A HOME
-      // ======================================
-
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) =>
-              const HomeScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } catch (e) {
       if (!mounted) {
         return;
       }
 
-      String mensagem =
-          e.toString();
-
-      mensagem =
-          mensagem.replaceFirst(
-        'Exception: ',
-        '',
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            mensagem,
-          ),
-        ),
-      );
+      mostrarMensagem(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() {
@@ -122,6 +62,11 @@ class _LoginScreenState
         });
       }
     }
+  }
+
+  void mostrarMensagem(String mensagem) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(mensagem)));
   }
 
   @override
@@ -134,289 +79,290 @@ class _LoginScreenState
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+
+    final cores = tema.colorScheme;
+
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding:
-              const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              // =================================
-              // IMAGEM
-              // =================================
-
-              ClipRRect(
-                borderRadius:
-                    BorderRadius.circular(16),
-                child: Image.asset(
-                  'assets/images/fast_splash.png',
-                  width: double.infinity,
-                  height: 220,
-                  fit: BoxFit.cover,
-                ),
-              ),
-
-              const SizedBox(
-                height: 32,
-              ),
-
-              // =================================
-              // EMAIL
-              // =================================
-
-              TextField(
-                controller: emailController,
-                keyboardType:
-                    TextInputType.emailAddress,
-                enabled: !carregando,
-                decoration: InputDecoration(
-                  labelText: 'E-mail',
-                  hintText:
-                      'Digite seu e-mail',
-                  prefixIcon: const Icon(
-                    Icons.email_outlined,
-                  ),
-                  filled: true,
-                  fillColor:
-                      Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      16,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: tema.brightness == Brightness.dark
+                ? const [Color(0xFF0D1218), Color(0xFF111B25)]
+                : const [Color(0xFFF7FAFD), Color(0xFFEAF2F8)],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: const _SeletorTema(),
                     ),
-                    borderSide:
-                        BorderSide.none,
-                  ),
-                  enabledBorder:
-                      OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-                    borderSide: BorderSide(
-                      color:
-                          Theme.of(context)
-                              .colorScheme
-                              .outlineVariant,
-                    ),
-                  ),
-                  focusedBorder:
-                      OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-                    borderSide: BorderSide(
-                      color:
-                          Theme.of(context)
-                              .colorScheme
-                              .primary,
-                      width: 1.5,
-                    ),
-                  ),
-                  contentPadding:
-                      const EdgeInsets
-                          .symmetric(
-                    vertical: 18,
-                    horizontal: 16,
-                  ),
-                ),
-              ),
 
-              const SizedBox(
-                height: 16,
-              ),
+                    const SizedBox(height: 10),
 
-              // =================================
-              // SENHA
-              // =================================
+                    Container(
+                      height: 260,
 
-              TextField(
-                controller: senhaController,
-                obscureText: true,
-                enabled: !carregando,
-                onSubmitted: (_) {
-                  if (!carregando) {
-                    entrar();
-                  }
-                },
-                decoration: InputDecoration(
-                  labelText: 'Senha',
-                  hintText:
-                      'Digite sua senha',
-                  prefixIcon: const Icon(
-                    Icons.lock_outline,
-                  ),
-                  filled: true,
-                  fillColor:
-                      Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-                    borderSide:
-                        BorderSide.none,
-                  ),
-                  enabledBorder:
-                      OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-                    borderSide: BorderSide(
-                      color:
-                          Theme.of(context)
-                              .colorScheme
-                              .outlineVariant,
-                    ),
-                  ),
-                  focusedBorder:
-                      OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-                    borderSide: BorderSide(
-                      color:
-                          Theme.of(context)
-                              .colorScheme
-                              .primary,
-                      width: 1.5,
-                    ),
-                  ),
-                  contentPadding:
-                      const EdgeInsets
-                          .symmetric(
-                    vertical: 18,
-                    horizontal: 16,
-                  ),
-                ),
-              ),
+                      padding: const EdgeInsets.all(12),
 
-              const SizedBox(
-                height: 24,
-              ),
+                      decoration: BoxDecoration(
+                        color: cores.surfaceContainerHighest,
 
-              // =================================
-              // ENTRAR
-              // =================================
+                        borderRadius: BorderRadius.circular(22),
 
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed:
-                      carregando
-                          ? null
-                          : entrar,
-                  style:
-                      ElevatedButton
-                          .styleFrom(
-                    backgroundColor:
-                        Theme.of(context)
-                            .colorScheme
-                            .inverseSurface,
-                    foregroundColor:
-                        Theme.of(context)
-                            .colorScheme
-                            .onInverseSurface,
-                    elevation: 0,
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius
-                              .circular(
-                        16,
+                        border: Border.all(
+                          color: cores.secondary.withValues(alpha: 0.18),
+                        ),
+
+                        boxShadow: [
+                          BoxShadow(
+                            color: cores.primary.withValues(alpha: 0.15),
+
+                            blurRadius: 30,
+                          ),
+                        ],
+                      ),
+
+                      child: Image.asset(
+                        'assets/images/fast_splash.png',
+
+                        fit: BoxFit.contain,
                       ),
                     ),
-                  ),
-                  child: carregando
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child:
-                              CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : const Text(
-                          'Entrar',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight:
-                                FontWeight
-                                    .bold,
+
+                    const SizedBox(height: 28),
+
+                    const _MarcaFastSplash(),
+
+                    const SizedBox(height: 10),
+
+                    Text(
+                      'Seu carro limpo. Seu tempo preservado.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: cores.onSurface.withValues(alpha: 0.60),
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    TextField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      enabled: !carregando,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'E-mail',
+                        hintText: 'cliente@email.com',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    TextField(
+                      controller: senhaController,
+                      obscureText: ocultarSenha,
+                      enabled: !carregando,
+                      onSubmitted: (_) {
+                        if (!carregando) {
+                          entrar();
+                        }
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Senha',
+                        hintText: 'Digite sua senha',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              ocultarSenha = !ocultarSenha;
+                            });
+                          },
+                          icon: Icon(
+                            ocultarSenha
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
                           ),
                         ),
-                ),
-              ),
-
-              const SizedBox(
-                height: 14,
-              ),
-
-              // =================================
-              // CRIAR CONTA
-              // =================================
-
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton(
-                  onPressed:
-                      carregando
-                          ? null
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) =>
-                                          const CadastroScreen(),
-                                ),
-                              );
-                            },
-                  style:
-                      OutlinedButton
-                          .styleFrom(
-                    foregroundColor:
-                        Theme.of(context)
-                            .colorScheme
-                            .onSurface,
-                    side: BorderSide(
-                      color:
-                          Theme.of(context)
-                              .colorScheme
-                              .outlineVariant,
-                    ),
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius
-                              .circular(
-                        16,
                       ),
                     ),
-                  ),
-                  child: const Text(
-                    'Criar Conta',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight:
-                          FontWeight.w600,
+
+                    const SizedBox(height: 20),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: carregando ? null : entrar,
+                        child: carregando
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.4,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Entrar'),
+                      ),
                     ),
-                  ),
+
+                    const SizedBox(height: 18),
+
+                    Text(
+                      'Ainda não possui uma conta?\n'
+                      'Faça seu cadastro pelo site Fast Splash.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface
+                            .withValues(alpha: 0.55),
+                        fontSize: 12,
+                        height: 1.5,
+                      ),
+                    ),
+
+                    const SizedBox(height: 22),
+
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'FAST SPLASH',
+                            style: TextStyle(
+                              color: cores.onSurface.withValues(alpha: 0.50),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                  ],
                 ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MarcaFastSplash extends StatelessWidget {
+  const _MarcaFastSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 31,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.8,
+            ),
+            children: [
+              TextSpan(
+                text: 'Fast ',
+                style: TextStyle(color: cores.onSurface),
+              ),
+              TextSpan(
+                text: 'Splash',
+                style: TextStyle(color: cores.secondary),
               ),
             ],
           ),
         ),
-      ),
+        const SizedBox(height: 3),
+        const Text(
+          'CAR WASH',
+          style: TextStyle(
+            color: FastSplashTheme.laranja,
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 3.2,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SeletorTema extends StatelessWidget {
+  const _SeletorTema();
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = Theme.of(context).colorScheme;
+
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeModeNotifier,
+      builder: (context, modo, child) {
+        return PopupMenuButton<ThemeMode>(
+          tooltip: 'Tema',
+          onSelected: definirTema,
+          itemBuilder: (context) => const [
+            PopupMenuItem(
+              value: ThemeMode.system,
+              child: Row(
+                children: [
+                  Icon(Icons.brightness_auto_outlined),
+                  SizedBox(width: 10),
+                  Text('Seguir aparelho'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: ThemeMode.light,
+              child: Row(
+                children: [
+                  Icon(Icons.light_mode_outlined),
+                  SizedBox(width: 10),
+                  Text('Tema claro'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: ThemeMode.dark,
+              child: Row(
+                children: [
+                  Icon(Icons.dark_mode_outlined),
+                  SizedBox(width: 10),
+                  Text('Tema escuro'),
+                ],
+              ),
+            ),
+          ],
+          icon: Icon(
+            modo == ThemeMode.system
+                ? Icons.brightness_auto_outlined
+                : modo == ThemeMode.light
+                ? Icons.light_mode_outlined
+                : Icons.dark_mode_outlined,
+            color: cores.secondary,
+          ),
+        );
+      },
     );
   }
 }
