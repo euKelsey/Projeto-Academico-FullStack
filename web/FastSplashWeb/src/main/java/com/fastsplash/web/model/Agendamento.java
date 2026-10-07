@@ -20,6 +20,7 @@ public class Agendamento {
 
     // Campos usados para exibição
     private String veiculoDescricao;
+    private String clienteNome;
     private String servicosDescricao;
     private double valorTotal;
 
@@ -113,6 +114,19 @@ public class Agendamento {
 
         this.veiculoDescricao =
                 veiculoDescricao;
+    }
+
+
+    public String getClienteNome() {
+        return clienteNome;
+    }
+
+    public void setClienteNome(
+            String clienteNome
+    ) {
+
+        this.clienteNome =
+                clienteNome;
     }
 
 

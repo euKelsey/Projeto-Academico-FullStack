@@ -234,6 +234,7 @@ public class AgendamentoDAO {
                     a.data,
                     a.horario,
                     a.status,
+                    c.nome AS cliente,
 
                     CONCAT(
                         v.marca,
@@ -260,6 +261,10 @@ public class AgendamentoDAO {
                     ON v.id_veiculo =
                        a.id_veiculo
 
+                INNER JOIN cliente c
+                    ON c.id_cliente =
+                       v.id_cliente
+
                 LEFT JOIN agendamento_servico ags
                     ON ags.id_agendamento =
                        a.id_agendamento
@@ -274,6 +279,7 @@ public class AgendamentoDAO {
                     a.data,
                     a.horario,
                     a.status,
+                    c.nome,
                     v.marca,
                     v.modelo,
                     v.placa
@@ -329,6 +335,7 @@ public class AgendamentoDAO {
                     a.data,
                     a.horario,
                     a.status,
+                    c.nome AS cliente,
 
                     CONCAT(
                         v.marca,
@@ -355,6 +362,10 @@ public class AgendamentoDAO {
                     ON v.id_veiculo =
                        a.id_veiculo
 
+                INNER JOIN cliente c
+                    ON c.id_cliente =
+                       v.id_cliente
+
                 LEFT JOIN agendamento_servico ags
                     ON ags.id_agendamento =
                        a.id_agendamento
@@ -371,6 +382,7 @@ public class AgendamentoDAO {
                     a.data,
                     a.horario,
                     a.status,
+                    c.nome,
                     v.marca,
                     v.modelo,
                     v.placa
@@ -781,6 +793,13 @@ public boolean cancelarDoCliente(
         agendamento.setVeiculoDescricao(
                 resultado.getString(
                         "veiculo"
+                )
+        );
+
+
+        agendamento.setClienteNome(
+                resultado.getString(
+                        "cliente"
                 )
         );
 

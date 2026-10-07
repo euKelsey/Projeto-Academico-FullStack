@@ -3,267 +3,441 @@
     pageEncoding="UTF-8"%>
 
 <%@ page import="java.util.List" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="com.fastsplash.web.model.Atendimento" %>
 
 <%
     List<Atendimento> atendimentos =
-        (List<Atendimento>)
-            request.getAttribute(
+            (List<Atendimento>) request.getAttribute(
                     "atendimentos"
+            );
+
+    DateTimeFormatter formatoDataHora =
+            DateTimeFormatter.ofPattern(
+                    "dd/MM/yyyy HH:mm"
             );
 %>
 
 <!DOCTYPE html>
 
-<html>
+<html lang="pt-BR">
 
 <head>
 
     <meta charset="UTF-8">
 
-    <title>
-        Atendimentos - Fast Splash
-    </title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Atendimentos | Fast Splash</title>
+
+    <link
+        rel="stylesheet"
+        href="${pageContext.request.contextPath}/css/site.css"
+    >
 
 </head>
 
-<body>
+
+<body class="pagina-interna">
 
 
-    <h1>Atendimentos</h1>
+    <header class="interna-topo">
+
+        <div class="container interna-topo-conteudo">
+
+            <div class="marca-cabecalho">
+
+                <div class="marca-nome">
+
+                    <span class="marca-fast">
+                        Fast
+                    </span>
+
+                    <span class="marca-splash">
+                        Splash
+                    </span>
+
+                </div>
+
+                <span class="marca-subtitulo">
+                    GESTÃO
+                </span>
+
+            </div>
 
 
-    <a href="${pageContext.request.contextPath}/atendimento?acao=novo">
-        Novo atendimento
-    </a>
+            <div class="interna-topo-acoes">
 
-
-    <br><br>
-
-
-    <table border="1">
-
-
-        <tr>
-
-            <th>ID</th>
-            <th>Agendamento</th>
-            <th>Veículo</th>
-            <th>Serviços</th>
-            <th>Status</th>
-            <th>Início</th>
-            <th>Fim</th>
-            <th>Ações</th>
-
-        </tr>
-
-
-        <%
-            if (atendimentos != null) {
-
-                for (
-                    Atendimento atendimento :
-                    atendimentos
-                ) {
-        %>
-
-
-        <tr>
-
-
-            <td>
-                <%= atendimento.getIdAtendimento() %>
-            </td>
-
-
-            <td>
-                #<%= atendimento.getIdAgendamento() %>
-            </td>
-
-
-            <td>
-                <%= atendimento.getVeiculoDescricao() %>
-            </td>
-
-
-            <td>
-                <%= atendimento.getServicosDescricao() %>
-            </td>
-
-
-            <td>
-                <%= atendimento.getStatus() %>
-            </td>
-
-
-            <td>
-
-                <%
-                    if (
-                        atendimento.getDataInicio()
-                        != null
-                    ) {
-                %>
-
-                    <%= atendimento.getDataInicio() %>
-
-                <%
-                    } else {
-                %>
-
-                    -
-
-                <%
-                    }
-                %>
-
-            </td>
-
-
-            <td>
-
-                <%
-                    if (
-                        atendimento.getDataFim()
-                        != null
-                    ) {
-                %>
-
-                    <%= atendimento.getDataFim() %>
-
-                <%
-                    } else {
-                %>
-
-                    -
-
-                <%
-                    }
-                %>
-
-            </td>
-
-
-            <td>
-
-
-                <a href="${pageContext.request.contextPath}/atendimento?acao=detalhes&idAtendimento=<%= atendimento.getIdAtendimento() %>">
-                    Detalhes
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/dashboard.jsp"
+                >
+                    ← Dashboard
                 </a>
 
+            </div>
 
-                <br><br>
+        </div>
 
-
-                <% if (
-                    "AGUARDANDO".equals(
-                        atendimento.getStatus()
-                    )
-                ) { %>
+    </header>
 
 
-                <form
-                    action="${pageContext.request.contextPath}/atendimento"
-                    method="post"
+    <main class="interna-principal">
+
+        <div class="container">
+
+
+            <section class="interna-cabecalho">
+
+                <div>
+
+                    <span class="destaque-pequeno">
+                        Gestão de atendimentos
+                    </span>
+
+                    <h1>
+                        Atendimentos
+                    </h1>
+
+                    <p>
+                        Acompanhe o fluxo da lavagem,
+                        do aguardo até a finalização.
+                    </p>
+
+                </div>
+
+
+                <a
+                    class="botao-interno-principal"
+                    href="${pageContext.request.contextPath}/atendimento?acao=novo"
                 >
+                    + Novo atendimento
+                </a>
 
-                    <input
-                        type="hidden"
-                        name="acao"
-                        value="iniciar"
-                    >
+            </section>
 
 
-                    <input
-                        type="hidden"
-                        name="idAtendimento"
-                        value="<%= atendimento.getIdAtendimento() %>"
-                    >
+            <section class="tabela-card">
+
+                <div class="tabela-responsiva">
 
 
-                    <button type="submit">
-                        Iniciar Lavagem
-                    </button>
+                    <%
+                        if (
+                            atendimentos != null
+                            && !atendimentos.isEmpty()
+                        ) {
+                    %>
 
 
-                </form>
+                        <table class="tabela-interna">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Cliente / Veículo
+                                    </th>
+
+                                    <th>
+                                        Serviços
+                                    </th>
+
+                                    <th>
+                                        Status
+                                    </th>
+
+                                    <th>
+                                        Início
+                                    </th>
+
+                                    <th>
+                                        Fim
+                                    </th>
+
+                                    <th>
+                                        Ações
+                                    </th>
+
+                                </tr>
+
+                            </thead>
 
 
-                <% } %>
+                            <tbody>
 
 
-                <% if (
-                    "EM_LAVAGEM".equals(
-                        atendimento.getStatus()
-                    )
-                ) { %>
+                                <%
+                                    for (
+                                        Atendimento atendimento
+                                        : atendimentos
+                                    ) {
+
+                                        String status =
+                                                atendimento.getStatus();
+
+                                        String classeStatus =
+                                                "status-aguardando";
+
+                                        if (
+                                            "EM_LAVAGEM".equals(
+                                                    status
+                                            )
+                                        ) {
+
+                                            classeStatus =
+                                                    "status-em-lavagem";
+
+                                        } else if (
+                                            "FINALIZADO".equals(
+                                                    status
+                                            )
+                                        ) {
+
+                                            classeStatus =
+                                                    "status-finalizado";
+                                        }
+                                %>
 
 
-                <form
-                    action="${pageContext.request.contextPath}/atendimento"
-                    method="post"
-                >
+                                <tr>
+
+                                    <td>
+
+                                        <div class="atendimento-identidade">
+
+                                            <strong>
+                                                <%= atendimento.getClienteNome() %>
+                                            </strong>
+
+                                            <span>
+                                                <%= atendimento.getVeiculoDescricao() %>
+                                            </span>
+
+                                            <span>
+                                                Atendimento #<%= atendimento.getIdAtendimento() %>
+                                                · Agendamento #<%= atendimento.getIdAgendamento() %>
+                                            </span>
+
+                                        </div>
+
+                                    </td>
 
 
-                    <input
-                        type="hidden"
-                        name="acao"
-                        value="finalizar"
-                    >
+                                    <td>
+
+                                        <div class="agendamento-servicos">
+                                            <%= atendimento.getServicosDescricao() %>
+                                        </div>
+
+                                    </td>
 
 
-                    <input
-                        type="hidden"
-                        name="idAtendimento"
-                        value="<%= atendimento.getIdAtendimento() %>"
-                    >
+                                    <td>
+
+                                        <span
+                                            class="status-badge <%= classeStatus %>"
+                                        >
+                                            <%= status %>
+                                        </span>
+
+                                    </td>
 
 
-                    <button type="submit">
-                        Finalizar
-                    </button>
+                                    <td>
+
+                                        <div class="atendimento-data">
+
+                                            <%
+                                                if (
+                                                    atendimento.getDataInicio()
+                                                    != null
+                                                ) {
+                                            %>
+
+                                                <strong>
+                                                    <%= atendimento.getDataInicio().format(formatoDataHora) %>
+                                                </strong>
+
+                                            <%
+                                                } else {
+                                            %>
+
+                                                <span>
+                                                    Ainda não iniciado
+                                                </span>
+
+                                            <%
+                                                }
+                                            %>
+
+                                        </div>
+
+                                    </td>
 
 
-                </form>
+                                    <td>
+
+                                        <div class="atendimento-data">
+
+                                            <%
+                                                if (
+                                                    atendimento.getDataFim()
+                                                    != null
+                                                ) {
+                                            %>
+
+                                                <strong>
+                                                    <%= atendimento.getDataFim().format(formatoDataHora) %>
+                                                </strong>
+
+                                            <%
+                                                } else {
+                                            %>
+
+                                                <span>
+                                                    —
+                                                </span>
+
+                                            <%
+                                                }
+                                            %>
+
+                                        </div>
+
+                                    </td>
 
 
-                <% } %>
+                                    <td>
+
+                                        <div class="acoes-tabela">
+
+                                            <a
+                                                class="acao-detalhes"
+                                                href="${pageContext.request.contextPath}/atendimento?acao=detalhes&idAtendimento=<%= atendimento.getIdAtendimento() %>"
+                                            >
+                                                Detalhes
+                                            </a>
 
 
-                <% if (
-                    "FINALIZADO".equals(
-                        atendimento.getStatus()
-                    )
-                ) { %>
+                                            <%
+                                                if (
+                                                    "AGUARDANDO".equals(
+                                                            status
+                                                    )
+                                                ) {
+                                            %>
+
+                                                <form
+                                                    action="${pageContext.request.contextPath}/atendimento"
+                                                    method="post"
+                                                >
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="acao"
+                                                        value="iniciar"
+                                                    >
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="idAtendimento"
+                                                        value="<%= atendimento.getIdAtendimento() %>"
+                                                    >
+
+                                                    <button
+                                                        class="acao-iniciar"
+                                                        type="submit"
+                                                    >
+                                                        Iniciar
+                                                    </button>
+
+                                                </form>
+
+                                            <%
+                                                }
+                                            %>
 
 
-                    Atendimento concluído
+                                            <%
+                                                if (
+                                                    "EM_LAVAGEM".equals(
+                                                            status
+                                                    )
+                                                ) {
+                                            %>
+
+                                                <form
+                                                    action="${pageContext.request.contextPath}/atendimento"
+                                                    method="post"
+                                                >
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="acao"
+                                                        value="finalizar"
+                                                    >
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="idAtendimento"
+                                                        value="<%= atendimento.getIdAtendimento() %>"
+                                                    >
+
+                                                    <button
+                                                        class="acao-finalizar"
+                                                        type="submit"
+                                                    >
+                                                        Finalizar
+                                                    </button>
+
+                                                </form>
+
+                                            <%
+                                                }
+                                            %>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
 
 
-                <% } %>
+                                <%
+                                    }
+                                %>
 
 
-            </td>
+                            </tbody>
+
+                        </table>
 
 
-        </tr>
+                    <%
+                        } else {
+                    %>
+
+                        <div class="estado-vazio">
+                            Nenhum atendimento cadastrado.
+                        </div>
+
+                    <%
+                        }
+                    %>
 
 
-        <%
-                }
-            }
-        %>
+                </div>
 
+            </section>
 
-    </table>
+        </div>
 
-
-    <br>
-
-
-    <a href="${pageContext.request.contextPath}/index.jsp">
-        Voltar para o início
-    </a>
+    </main>
 
 
 </body>

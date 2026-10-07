@@ -65,3 +65,7 @@ web/FastSplashWeb/build/
 
 # VS code
 .vscode/
+
+# Eclipse
+.classpath
+.project

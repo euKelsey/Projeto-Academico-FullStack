@@ -190,6 +190,10 @@ public class AccessFilter implements Filter {
            )
            ||
            caminho.equals(
+                "/cadastro.jsp"
+           )
+           ||
+           caminho.equals(
                 "/login"
            )
            ||
@@ -235,6 +239,10 @@ public class AccessFilter implements Filter {
                ||
                caminho.equals(
                     "/index.jsp"
+               )
+               ||
+               caminho.equals(
+                    "/dashboard.jsp"
                )
                ||
                caminho.equals(

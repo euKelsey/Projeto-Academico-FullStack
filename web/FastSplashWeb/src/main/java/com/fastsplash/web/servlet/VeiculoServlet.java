@@ -2,6 +2,7 @@ package com.fastsplash.web.servlet;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Locale;
 
 import com.fastsplash.web.dao.ClienteDAO;
 import com.fastsplash.web.dao.VeiculoDAO;
@@ -25,10 +26,6 @@ public class VeiculoServlet extends HttpServlet {
             new ClienteDAO();
 
 
-    // =========================================
-    // GET
-    // =========================================
-
     @Override
     protected void doGet(
             HttpServletRequest request,
@@ -36,12 +33,14 @@ public class VeiculoServlet extends HttpServlet {
     ) throws ServletException, IOException {
 
         String acao =
-                request.getParameter("acao");
+                request.getParameter(
+                        "acao"
+                );
 
 
-        // =====================================
-        // ABRIR CADASTRO DE VEÍCULO
-        // =====================================
+        // =========================================
+        // NOVO VEÍCULO
+        // =========================================
 
         if ("novo".equals(acao)) {
 
@@ -71,17 +70,18 @@ public class VeiculoServlet extends HttpServlet {
         }
 
 
-        // =====================================
-        // ABRIR EDIÇÃO DE VEÍCULO
-        // =====================================
+        // =========================================
+        // EDITAR VEÍCULO
+        // =========================================
 
         if ("editar".equals(acao)) {
 
-            int idVeiculo = Integer.parseInt(
-                    request.getParameter(
-                            "idVeiculo"
-                    )
-            );
+            int idVeiculo =
+                    Integer.parseInt(
+                            request.getParameter(
+                                    "idVeiculo"
+                            )
+                    );
 
             try {
 
@@ -129,15 +129,25 @@ public class VeiculoServlet extends HttpServlet {
         }
 
 
-        // =====================================
+        // =========================================
         // LISTAR VEÍCULOS
-        // =====================================
+        // =========================================
 
         try {
 
             request.setAttribute(
                     "veiculos",
                     veiculoDAO.listarTodos()
+            );
+
+            /*
+             * Também enviamos os clientes para a JSP.
+             * Assim a tabela mostra o nome do proprietário,
+             * e não somente o ID do cliente.
+             */
+            request.setAttribute(
+                    "clientes",
+                    clienteDAO.listarTodos()
             );
 
             request.getRequestDispatcher(
@@ -157,51 +167,97 @@ public class VeiculoServlet extends HttpServlet {
     }
 
 
-    // =========================================
-    // POST
-    // =========================================
-
     @Override
     protected void doPost(
             HttpServletRequest request,
             HttpServletResponse response
     ) throws ServletException, IOException {
 
-        request.setCharacterEncoding("UTF-8");
+        request.setCharacterEncoding(
+                "UTF-8"
+        );
 
         String acao =
-                request.getParameter("acao");
+                request.getParameter(
+                        "acao"
+                );
 
 
-        // =====================================
+        // =========================================
         // ATUALIZAR VEÍCULO
-        // =====================================
+        // =========================================
 
         if ("atualizar".equals(acao)) {
 
-            int idVeiculo = Integer.parseInt(
-                    request.getParameter(
-                            "idVeiculo"
-                    )
-            );
+            int idVeiculo =
+                    Integer.parseInt(
+                            request.getParameter(
+                                    "idVeiculo"
+                            )
+                    );
 
-            int idCliente = Integer.parseInt(
-                    request.getParameter(
-                            "idCliente"
-                    )
-            );
+            int idCliente =
+                    Integer.parseInt(
+                            request.getParameter(
+                                    "idCliente"
+                            )
+                    );
 
             String placa =
-                    request.getParameter("placa");
+                    padronizarPlaca(
+                            request.getParameter(
+                                    "placa"
+                            )
+                    );
 
             String marca =
-                    request.getParameter("marca");
+                    padronizarTexto(
+                            request.getParameter(
+                                    "marca"
+                            )
+                    );
 
             String modelo =
-                    request.getParameter("modelo");
+                    padronizarTexto(
+                            request.getParameter(
+                                    "modelo"
+                            )
+                    );
 
             String cor =
-                    request.getParameter("cor");
+                    padronizarTexto(
+                            request.getParameter(
+                                    "cor"
+                            )
+                    );
+
+
+            if (
+                placa == null
+                || marca == null
+                || modelo == null
+                || cor == null
+            ) {
+
+                response.sendError(
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "Preencha todos os campos."
+                );
+
+                return;
+            }
+
+
+            if (!placaValida(placa)) {
+
+                response.sendError(
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "Informe uma placa brasileira válida com 7 caracteres."
+                );
+
+                return;
+            }
+
 
             try {
 
@@ -261,17 +317,18 @@ public class VeiculoServlet extends HttpServlet {
         }
 
 
-        // =====================================
+        // =========================================
         // EXCLUIR VEÍCULO
-        // =====================================
+        // =========================================
 
         if ("excluir".equals(acao)) {
 
-            int idVeiculo = Integer.parseInt(
-                    request.getParameter(
-                            "idVeiculo"
-                    )
-            );
+            int idVeiculo =
+                    Integer.parseInt(
+                            request.getParameter(
+                                    "idVeiculo"
+                            )
+                    );
 
             try {
 
@@ -296,27 +353,79 @@ public class VeiculoServlet extends HttpServlet {
         }
 
 
-        // =====================================
+        // =========================================
         // CADASTRAR VEÍCULO
-        // =====================================
+        // =========================================
 
-        int idCliente = Integer.parseInt(
-                request.getParameter(
-                        "idCliente"
-                )
-        );
+        String idClienteTexto =
+                limpar(
+                        request.getParameter(
+                                "idCliente"
+                        )
+                );
 
         String placa =
-                request.getParameter("placa");
+                padronizarPlaca(
+                        request.getParameter(
+                                "placa"
+                        )
+                );
 
         String marca =
-                request.getParameter("marca");
+                padronizarTexto(
+                        request.getParameter(
+                                "marca"
+                        )
+                );
 
         String modelo =
-                request.getParameter("modelo");
+                padronizarTexto(
+                        request.getParameter(
+                                "modelo"
+                        )
+                );
 
         String cor =
-                request.getParameter("cor");
+                padronizarTexto(
+                        request.getParameter(
+                                "cor"
+                        )
+                );
+
+
+        if (
+            idClienteTexto == null
+            || placa == null
+            || marca == null
+            || modelo == null
+            || cor == null
+        ) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "Preencha todos os campos."
+            );
+
+            return;
+        }
+
+
+        if (!placaValida(placa)) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "Informe uma placa brasileira válida com 7 caracteres."
+            );
+
+            return;
+        }
+
+
+        int idCliente =
+                Integer.parseInt(
+                        idClienteTexto
+                );
+
 
         Veiculo veiculo =
                 new Veiculo();
@@ -341,6 +450,7 @@ public class VeiculoServlet extends HttpServlet {
                 cor
         );
 
+
         try {
 
             veiculoDAO.inserir(
@@ -359,5 +469,81 @@ public class VeiculoServlet extends HttpServlet {
                     e
             );
         }
+    }
+
+
+    private String limpar(
+            String valor
+    ) {
+
+        if (valor == null) {
+            return null;
+        }
+
+        valor =
+                valor.trim();
+
+        if (valor.isEmpty()) {
+            return null;
+        }
+
+        return valor;
+    }
+
+
+    private String padronizarTexto(
+            String valor
+    ) {
+
+        valor =
+                limpar(
+                        valor
+                );
+
+        if (valor == null) {
+            return null;
+        }
+
+        return valor.toUpperCase(
+                Locale.ROOT
+        );
+    }
+
+
+    private String padronizarPlaca(
+            String placa
+    ) {
+
+        placa =
+                limpar(
+                        placa
+                );
+
+        if (placa == null) {
+            return null;
+        }
+
+        return placa
+                .replaceAll(
+                        "[^A-Za-z0-9]",
+                        ""
+                )
+                .toUpperCase(
+                        Locale.ROOT
+                );
+    }
+
+
+    private boolean placaValida(
+            String placa
+    ) {
+
+        return placa.matches(
+                "[A-Z]{3}[0-9]{4}"
+        )
+        ||
+        placa.matches(
+                "[A-Z]{3}[0-9][A-Z][0-9]{2}"
+        );
     }
 }

@@ -5,108 +5,332 @@
 <%@ page import="java.util.List" %>
 <%@ page import="com.fastsplash.web.model.Cliente" %>
 
+<%
+    List<Cliente> clientes =
+            (List<Cliente>) request.getAttribute(
+                    "clientes"
+            );
+%>
+
 <!DOCTYPE html>
-<html>
+
+<html lang="pt-BR">
 
 <head>
+
     <meta charset="UTF-8">
-    <title>Clientes - Fast Splash</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Clientes | Fast Splash</title>
+
+    <link
+        rel="stylesheet"
+        href="${pageContext.request.contextPath}/css/site.css"
+    >
+
 </head>
 
-<body>
 
-    <h1>Clientes cadastrados</h1>
+<body class="pagina-interna">
 
-    <%
-        List<Cliente> clientes =
-            (List<Cliente>) request.getAttribute("clientes");
-    %>
 
-    <table border="1">
+    <header class="interna-topo">
 
-    <tr>
-        <th>ID</th>
-        <th>Nome</th>
-        <th>CPF</th>
-        <th>Telefone</th>
-        <th>E-mail</th>
-        <th>Ações</th>
-    </tr>
+        <div class="container interna-topo-conteudo">
 
-    <%
-        if (clientes != null) {
+            <div class="marca-cabecalho">
 
-            for (Cliente cliente : clientes) {
-    %>
+                <div class="marca-nome">
 
-    <tr>
+                    <span class="marca-fast">
+                        Fast
+                    </span>
 
-        <td>
-            <%= cliente.getIdCliente() %>
-        </td>
+                    <span class="marca-splash">
+                        Splash
+                    </span>
 
-        <td>
-            <%= cliente.getNome() %>
-        </td>
+                </div>
 
-        <td>
-            <%= cliente.getCpf() %>
-        </td>
+                <span class="marca-subtitulo">
+                    GESTÃO
+                </span>
 
-        <td>
-            <%= cliente.getTelefone() %>
-        </td>
+            </div>
 
-        <td>
-            <%= cliente.getEmail() %>
-        </td>
 
-        <td>
-        
-         <a href="${pageContext.request.contextPath}/cliente?acao=editar&idCliente=<%= cliente.getIdCliente() %>">
-        Editar
-    </a>
+            <div class="interna-topo-acoes">
 
-            <form
-                action="${pageContext.request.contextPath}/cliente"
-                method="post"
-                style="display:inline;"
-            >
-
-                <input
-                    type="hidden"
-                    name="acao"
-                    value="excluir"
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/dashboard.jsp"
                 >
+                    ← Dashboard
+                </a>
 
-                <input
-                    type="hidden"
-                    name="idCliente"
-                    value="<%= cliente.getIdCliente() %>"
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/logout"
                 >
+                    Sair
+                </a>
 
-                <button type="submit">
-                    Excluir
-                </button>
+            </div>
 
-            </form>
+        </div>
 
-        </td>
+    </header>
 
-    </tr>
 
-    <%
-            }
-        }
-    %>
+    <main class="interna-principal">
 
-</table>
+        <div class="container">
 
-    <br>
 
-    <a href="cadastro-cliente.jsp">
-        Cadastrar novo cliente
-    </a>
+            <section class="interna-cabecalho">
+
+                <div>
+
+                    <span class="destaque-pequeno">
+                        Gestão de clientes
+                    </span>
+
+                    <h1>
+                        Clientes cadastrados
+                    </h1>
+
+                    <p>
+                        Consulte, edite ou cadastre clientes
+                        no sistema interno do Fast Splash.
+                    </p>
+
+                </div>
+
+
+                <a
+                    class="botao-interno-principal"
+                    href="${pageContext.request.contextPath}/cadastro-cliente.jsp"
+                >
+                    + Novo cliente
+                </a>
+
+            </section>
+
+
+            <section class="tabela-card">
+
+                <div class="tabela-responsiva">
+
+
+                    <%
+                        if (
+                            clientes != null
+                            && !clientes.isEmpty()
+                        ) {
+                    %>
+
+
+                        <table class="tabela-interna">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Cliente
+                                    </th>
+
+                                    <th>
+                                        CPF
+                                    </th>
+
+                                    <th>
+                                        Telefone
+                                    </th>
+
+                                    <th>
+                                        E-mail
+                                    </th>
+
+                                    <th>
+                                        Ações
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+
+                                <%
+                                    for (
+                                        Cliente cliente
+                                        : clientes
+                                    ) {
+
+                                        String nome =
+                                                cliente.getNome();
+
+                                        String iniciais = "?";
+
+                                        if (
+                                            nome != null
+                                            && !nome.isBlank()
+                                        ) {
+
+                                            String[] partes =
+                                                    nome.trim()
+                                                        .split("\\s+");
+
+                                            iniciais =
+                                                    partes[0]
+                                                        .substring(0, 1)
+                                                        .toUpperCase();
+
+                                            if (
+                                                partes.length > 1
+                                            ) {
+
+                                                iniciais +=
+                                                        partes[
+                                                            partes.length - 1
+                                                        ]
+                                                        .substring(0, 1)
+                                                        .toUpperCase();
+                                            }
+                                        }
+                                %>
+
+
+                                <tr>
+
+                                    <td>
+
+                                        <div class="cliente-identidade">
+
+                                            <span class="cliente-avatar">
+                                                <%= iniciais %>
+                                            </span>
+
+                                            <div>
+
+                                                <strong>
+                                                    <%= cliente.getNome() %>
+                                                </strong>
+
+                                                <span>
+                                                    ID #<%= cliente.getIdCliente() %>
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+                                        <%= cliente.getCpf() %>
+                                    </td>
+
+
+                                    <td>
+                                        <%= cliente.getTelefone() %>
+                                    </td>
+
+
+                                    <td>
+                                        <%= cliente.getEmail() %>
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="acoes-tabela">
+
+                                            <a
+                                                class="acao-editar"
+                                                href="${pageContext.request.contextPath}/cliente?acao=editar&idCliente=<%= cliente.getIdCliente() %>"
+                                            >
+                                                Editar
+                                            </a>
+
+
+                                            <form
+                                                action="${pageContext.request.contextPath}/cliente"
+                                                method="post"
+                                            >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="acao"
+                                                    value="excluir"
+                                                >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="idCliente"
+                                                    value="<%= cliente.getIdCliente() %>"
+                                                >
+
+                                                <button
+                                                    class="acao-excluir"
+                                                    type="submit"
+                                                    onclick="return confirm('Deseja realmente excluir este cliente?');"
+                                                >
+                                                    Excluir
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+
+                                <%
+                                    }
+                                %>
+
+
+                            </tbody>
+
+                        </table>
+
+
+                    <%
+                        } else {
+                    %>
+
+
+                        <div class="estado-vazio">
+
+                            Nenhum cliente cadastrado.
+
+                        </div>
+
+
+                    <%
+                        }
+                    %>
+
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
 
 </body>
 

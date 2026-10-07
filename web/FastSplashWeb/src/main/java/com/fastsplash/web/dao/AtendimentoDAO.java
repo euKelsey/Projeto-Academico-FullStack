@@ -81,6 +81,7 @@ public class AtendimentoDAO {
                     at.status,
                     at.data_inicio,
                     at.data_fim,
+                    c.nome AS cliente,
 
                     CONCAT(
                         v.marca,
@@ -106,6 +107,10 @@ public class AtendimentoDAO {
                     ON v.id_veiculo =
                        a.id_veiculo
 
+                INNER JOIN cliente c
+                    ON c.id_cliente =
+                       v.id_cliente
+
                 LEFT JOIN agendamento_servico ags
                     ON ags.id_agendamento =
                        a.id_agendamento
@@ -120,6 +125,7 @@ public class AtendimentoDAO {
                     at.status,
                     at.data_inicio,
                     at.data_fim,
+                    c.nome,
                     v.marca,
                     v.modelo,
                     v.placa
@@ -177,6 +183,7 @@ public class AtendimentoDAO {
                     at.status,
                     at.data_inicio,
                     at.data_fim,
+                    c.nome AS cliente,
 
                     CONCAT(
                         v.marca,
@@ -202,6 +209,10 @@ public class AtendimentoDAO {
                     ON v.id_veiculo =
                        a.id_veiculo
 
+                INNER JOIN cliente c
+                    ON c.id_cliente =
+                       v.id_cliente
+
                 LEFT JOIN agendamento_servico ags
                     ON ags.id_agendamento =
                        a.id_agendamento
@@ -218,6 +229,7 @@ public class AtendimentoDAO {
                     at.status,
                     at.data_inicio,
                     at.data_fim,
+                    c.nome,
                     v.marca,
                     v.modelo,
                     v.placa
@@ -272,6 +284,7 @@ public class AtendimentoDAO {
                     a.data,
                     a.horario,
                     a.status,
+                    c.nome AS cliente,
 
                     CONCAT(
                         v.marca,
@@ -298,6 +311,10 @@ public class AtendimentoDAO {
                     ON v.id_veiculo =
                        a.id_veiculo
 
+                INNER JOIN cliente c
+                    ON c.id_cliente =
+                       v.id_cliente
+
                 LEFT JOIN agendamento_servico ags
                     ON ags.id_agendamento =
                        a.id_agendamento
@@ -320,6 +337,7 @@ public class AtendimentoDAO {
                     a.data,
                     a.horario,
                     a.status,
+                    c.nome,
                     v.marca,
                     v.modelo,
                     v.placa
@@ -382,6 +400,13 @@ public class AtendimentoDAO {
                 agendamento.setStatus(
                         resultado.getString(
                                 "status"
+                        )
+                );
+
+
+                agendamento.setClienteNome(
+                        resultado.getString(
+                                "cliente"
                         )
                 );
 
@@ -655,6 +680,13 @@ public class AtendimentoDAO {
                             .toLocalDateTime()
             );
         }
+
+
+        atendimento.setClienteNome(
+                resultado.getString(
+                        "cliente"
+                )
+        );
 
 
         atendimento.setVeiculoDescricao(

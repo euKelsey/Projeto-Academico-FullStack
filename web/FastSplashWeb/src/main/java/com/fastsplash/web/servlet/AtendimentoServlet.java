@@ -235,11 +235,34 @@ public class AtendimentoServlet
         // CRIAR ATENDIMENTO
         // =====================================
 
+        String idAgendamentoTexto =
+                request.getParameter(
+                        "idAgendamento"
+                );
+
+
+        if (
+            idAgendamentoTexto == null
+            || idAgendamentoTexto.isBlank()
+        ) {
+
+            request.setAttribute(
+                    "erro",
+                    "Selecione um agendamento."
+            );
+
+            carregarFormulario(
+                    request,
+                    response
+            );
+
+            return;
+        }
+
+
         int idAgendamento =
                 Integer.parseInt(
-                        request.getParameter(
-                                "idAgendamento"
-                        )
+                        idAgendamentoTexto
                 );
 
 

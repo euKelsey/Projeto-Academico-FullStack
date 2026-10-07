@@ -4,137 +4,347 @@
 
 <%@ page import="java.util.List" %>
 <%@ page import="com.fastsplash.web.model.Veiculo" %>
+<%@ page import="com.fastsplash.web.model.Cliente" %>
 
 <%
     List<Veiculo> veiculos =
-        (List<Veiculo>) request.getAttribute("veiculos");
+            (List<Veiculo>) request.getAttribute(
+                    "veiculos"
+            );
+
+    List<Cliente> clientes =
+            (List<Cliente>) request.getAttribute(
+                    "clientes"
+            );
 %>
 
 <!DOCTYPE html>
-<html>
+
+<html lang="pt-BR">
 
 <head>
+
     <meta charset="UTF-8">
-    <title>Veículos - Fast Splash</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Veículos | Fast Splash</title>
+
+    <link
+        rel="stylesheet"
+        href="${pageContext.request.contextPath}/css/site.css"
+    >
+
 </head>
 
-<body>
 
-    <h1>Veículos Cadastrados</h1>
-
-    <a href="${pageContext.request.contextPath}/veiculo?acao=novo">
-    Cadastrar novo veículo
-	</a>
-
-    <br><br>
+<body class="pagina-interna">
 
 
-    <table border="1">
+    <header class="interna-topo">
 
-        <tr>
+        <div class="container interna-topo-conteudo">
 
-            <th>ID</th>
-            <th>ID Cliente</th>
-            <th>Placa</th>
-            <th>Marca</th>
-            <th>Modelo</th>
-            <th>Cor</th>
-            <th>Ações</th>
+            <div class="marca-cabecalho">
 
-        </tr>
+                <div class="marca-nome">
 
+                    <span class="marca-fast">
+                        Fast
+                    </span>
 
-        <%
-            if (veiculos != null) {
+                    <span class="marca-splash">
+                        Splash
+                    </span>
 
-                for (Veiculo veiculo : veiculos) {
-        %>
+                </div>
 
+                <span class="marca-subtitulo">
+                    GESTÃO
+                </span>
 
-        <tr>
-
-            <td>
-                <%= veiculo.getIdVeiculo() %>
-            </td>
+            </div>
 
 
-            <td>
-                <%= veiculo.getIdCliente() %>
-            </td>
+            <div class="interna-topo-acoes">
 
-
-            <td>
-                <%= veiculo.getPlaca() %>
-            </td>
-
-
-            <td>
-                <%= veiculo.getMarca() %>
-            </td>
-
-
-            <td>
-                <%= veiculo.getModelo() %>
-            </td>
-
-
-            <td>
-                <%= veiculo.getCor() %>
-            </td>
-
-
-            <td>
-
-                <a href="${pageContext.request.contextPath}/veiculo?acao=editar&idVeiculo=<%= veiculo.getIdVeiculo() %>">
-                    Editar
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/dashboard.jsp"
+                >
+                    ← Dashboard
                 </a>
 
-
-                <form
-                    action="${pageContext.request.contextPath}/veiculo"
-                    method="post"
-                    style="display:inline;"
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/logout"
                 >
+                    Sair
+                </a>
 
-                    <input
-                        type="hidden"
-                        name="acao"
-                        value="excluir"
-                    >
+            </div>
 
+        </div>
 
-                    <input
-                        type="hidden"
-                        name="idVeiculo"
-                        value="<%= veiculo.getIdVeiculo() %>"
-                    >
+    </header>
 
 
-                    <button type="submit">
-                        Excluir
-                    </button>
+    <main class="interna-principal">
 
-                </form>
-
-            </td>
-
-        </tr>
+        <div class="container">
 
 
-        <%
-                }
-            }
-        %>
+            <section class="interna-cabecalho">
+
+                <div>
+
+                    <span class="destaque-pequeno">
+                        Gestão de veículos
+                    </span>
+
+                    <h1>
+                        Veículos cadastrados
+                    </h1>
+
+                    <p>
+                        Consulte os veículos vinculados
+                        aos clientes do Fast Splash.
+                    </p>
+
+                </div>
 
 
-    </table>
+                <a
+                    class="botao-interno-principal"
+                    href="${pageContext.request.contextPath}/veiculo?acao=novo"
+                >
+                    + Novo veículo
+                </a>
+
+            </section>
 
 
-    <br>
+            <section class="tabela-card">
 
-    <a href="${pageContext.request.contextPath}/index.jsp">
-        Voltar para o início
-    </a>
+                <div class="tabela-responsiva">
+
+
+                    <%
+                        if (
+                            veiculos != null
+                            && !veiculos.isEmpty()
+                        ) {
+                    %>
+
+
+                        <table class="tabela-interna">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Veículo
+                                    </th>
+
+                                    <th>
+                                        Placa
+                                    </th>
+
+                                    <th>
+                                        Cliente
+                                    </th>
+
+                                    <th>
+                                        Cor
+                                    </th>
+
+                                    <th>
+                                        Ações
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+
+                                <%
+                                    for (
+                                        Veiculo veiculo
+                                        : veiculos
+                                    ) {
+
+                                        String nomeCliente =
+                                                "Cliente não encontrado";
+
+                                        if (clientes != null) {
+
+                                            for (
+                                                Cliente cliente
+                                                : clientes
+                                            ) {
+
+                                                if (
+                                                    cliente.getIdCliente()
+                                                    == veiculo.getIdCliente()
+                                                ) {
+
+                                                    nomeCliente =
+                                                            cliente.getNome();
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                %>
+
+
+                                <tr>
+
+                                    <td>
+
+                                        <div class="veiculo-identidade">
+
+                                            <span class="veiculo-icone">
+                                                🚗
+                                            </span>
+
+                                            <div>
+
+                                                <strong>
+                                                    <%= veiculo.getMarca() %>
+                                                    <%= veiculo.getModelo() %>
+                                                </strong>
+
+                                                <span>
+                                                    ID #<%= veiculo.getIdVeiculo() %>
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="placa-badge">
+                                            <%= veiculo.getPlaca() %>
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="cliente-vinculo">
+
+                                            <strong>
+                                                <%= nomeCliente %>
+                                            </strong>
+
+                                            <span>
+                                                Cliente ID #<%= veiculo.getIdCliente() %>
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+                                        <%= veiculo.getCor() %>
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="acoes-tabela">
+
+                                            <a
+                                                class="acao-editar"
+                                                href="${pageContext.request.contextPath}/veiculo?acao=editar&idVeiculo=<%= veiculo.getIdVeiculo() %>"
+                                            >
+                                                Editar
+                                            </a>
+
+
+                                            <form
+                                                action="${pageContext.request.contextPath}/veiculo"
+                                                method="post"
+                                            >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="acao"
+                                                    value="excluir"
+                                                >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="idVeiculo"
+                                                    value="<%= veiculo.getIdVeiculo() %>"
+                                                >
+
+                                                <button
+                                                    class="acao-excluir"
+                                                    type="submit"
+                                                    onclick="return confirm('Deseja realmente excluir este veículo?');"
+                                                >
+                                                    Excluir
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+
+                                <%
+                                    }
+                                %>
+
+
+                            </tbody>
+
+                        </table>
+
+
+                    <%
+                        } else {
+                    %>
+
+
+                        <div class="estado-vazio">
+
+                            Nenhum veículo cadastrado.
+
+                        </div>
+
+
+                    <%
+                        }
+                    %>
+
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
 
 </body>
 

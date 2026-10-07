@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fastsplash.web.dao.AgendamentoDAO;
+import com.fastsplash.web.dao.ClienteDAO;
 import com.fastsplash.web.dao.ServicoDAO;
 import com.fastsplash.web.dao.VeiculoDAO;
 import com.fastsplash.web.model.Agendamento;
@@ -33,6 +34,9 @@ public class AgendamentoServlet extends HttpServlet {
 
     private final ServicoDAO servicoDAO =
             new ServicoDAO();
+
+    private final ClienteDAO clienteDAO =
+            new ClienteDAO();
 
 
     // =========================================
@@ -143,27 +147,60 @@ public class AgendamentoServlet extends HttpServlet {
         // CADASTRAR
         // =====================================
 
+        String idVeiculoTexto =
+                request.getParameter(
+                        "idVeiculo"
+                );
+
+        String dataTexto =
+                request.getParameter(
+                        "data"
+                );
+
+        String horarioTexto =
+                request.getParameter(
+                        "horario"
+                );
+
+
+        if (
+            idVeiculoTexto == null
+            || idVeiculoTexto.isBlank()
+            || dataTexto == null
+            || dataTexto.isBlank()
+            || horarioTexto == null
+            || horarioTexto.isBlank()
+        ) {
+
+            request.setAttribute(
+                    "erro",
+                    "Preencha o veículo, a data e o horário."
+            );
+
+            carregarFormulario(
+                    request,
+                    response
+            );
+
+            return;
+        }
+
+
         int idVeiculo =
                 Integer.parseInt(
-                        request.getParameter(
-                                "idVeiculo"
-                        )
+                        idVeiculoTexto
                 );
 
 
         LocalDate data =
                 LocalDate.parse(
-                        request.getParameter(
-                                "data"
-                        )
+                        dataTexto
                 );
 
 
         LocalTime horario =
                 LocalTime.parse(
-                        request.getParameter(
-                                "horario"
-                        )
+                        horarioTexto
                 );
 
 
@@ -277,6 +314,12 @@ public class AgendamentoServlet extends HttpServlet {
     ) throws ServletException, IOException {
 
         try {
+
+            request.setAttribute(
+                    "clientes",
+                    clienteDAO.listarTodos()
+            );
+
 
             request.setAttribute(
                     "veiculos",

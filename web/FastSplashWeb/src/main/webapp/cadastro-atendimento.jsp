@@ -3,133 +3,279 @@
     pageEncoding="UTF-8"%>
 
 <%@ page import="java.util.List" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="com.fastsplash.web.model.Agendamento" %>
 
 <%
     List<Agendamento> agendamentos =
-        (List<Agendamento>)
-            request.getAttribute(
+            (List<Agendamento>) request.getAttribute(
                     "agendamentos"
             );
 
     String erro =
-        (String)
-            request.getAttribute(
+            (String) request.getAttribute(
                     "erro"
+            );
+
+    boolean possuiAgendamentos =
+            agendamentos != null
+            && !agendamentos.isEmpty();
+
+    DateTimeFormatter formatoData =
+            DateTimeFormatter.ofPattern(
+                    "dd/MM/yyyy"
+            );
+
+    DateTimeFormatter formatoHora =
+            DateTimeFormatter.ofPattern(
+                    "HH:mm"
             );
 %>
 
 <!DOCTYPE html>
 
-<html>
+<html lang="pt-BR">
 
 <head>
 
     <meta charset="UTF-8">
 
-    <title>
-        Novo Atendimento - Fast Splash
-    </title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Novo atendimento | Fast Splash</title>
+
+    <link
+        rel="stylesheet"
+        href="${pageContext.request.contextPath}/css/site.css"
+    >
 
 </head>
 
-<body>
+
+<body class="pagina-interna">
 
 
-    <h1>Novo Atendimento</h1>
+    <header class="interna-topo">
+
+        <div class="container interna-topo-conteudo">
+
+            <div class="marca-cabecalho">
+
+                <div class="marca-nome">
+
+                    <span class="marca-fast">
+                        Fast
+                    </span>
+
+                    <span class="marca-splash">
+                        Splash
+                    </span>
+
+                </div>
+
+                <span class="marca-subtitulo">
+                    GESTÃO
+                </span>
+
+            </div>
 
 
-    <% if (erro != null) { %>
+            <div class="interna-topo-acoes">
 
-        <p>
-            <strong>
-                <%= erro %>
-            </strong>
-        </p>
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/atendimento"
+                >
+                    ← Atendimentos
+                </a>
 
-    <% } %>
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/dashboard.jsp"
+                >
+                    Dashboard
+                </a>
 
+            </div>
 
-    <form
-        action="${pageContext.request.contextPath}/atendimento"
-        method="post"
-    >
+        </div>
 
-
-        <label for="idAgendamento">
-            Agendamento:
-        </label>
-
-        <br>
-
-
-        <select
-            id="idAgendamento"
-            name="idAgendamento"
-            required
-        >
+    </header>
 
 
-            <option value="">
-                Selecione um agendamento
-            </option>
+    <main class="interna-principal">
+
+        <div class="container">
 
 
-            <%
-                if (agendamentos != null) {
+            <section class="interna-cabecalho">
 
-                    for (
-                        Agendamento agendamento :
-                        agendamentos
-                    ) {
-            %>
+                <div>
 
+                    <span class="destaque-pequeno">
+                        Gestão de atendimentos
+                    </span>
 
-            <option
-                value="<%= agendamento.getIdAgendamento() %>"
-            >
+                    <h1>
+                        Novo atendimento
+                    </h1>
 
-                #<%= agendamento.getIdAgendamento() %>
+                    <p>
+                        Selecione um agendamento ativo
+                        que ainda não possui atendimento.
+                    </p>
 
-                -
+                </div>
 
-                <%= agendamento.getVeiculoDescricao() %>
-
-                -
-
-                <%= agendamento.getData() %>
-
-                <%= agendamento.getHorario() %>
-
-            </option>
+            </section>
 
 
-            <%
+            <section class="form-interno-card">
+
+                <div class="form-interno-topo">
+
+                    <h2>
+                        Agendamento
+                    </h2>
+
+                    <p>
+                        Ao criar, o atendimento começa
+                        com status AGUARDANDO.
+                    </p>
+
+                </div>
+
+
+                <%
+                    if (erro != null) {
+                %>
+
+                    <div class="mensagem-interna-erro">
+                        <%= erro %>
+                    </div>
+
+                    <br>
+
+                <%
                     }
-                }
-            %>
+                %>
 
 
-        </select>
+                <%
+                    if (!possuiAgendamentos) {
+                %>
+
+                    <div class="aviso-interno">
+
+                        Não existem agendamentos disponíveis
+                        para iniciar um novo atendimento.
+
+                    </div>
+
+                <%
+                    }
+                %>
 
 
-        <br><br>
+                <form
+                    class="form-interno"
+                    action="${pageContext.request.contextPath}/atendimento"
+                    method="post"
+                >
 
 
-        <button type="submit">
-            Criar Atendimento
-        </button>
+                    <div class="campo-interno campo-interno-largo">
+
+                        <label for="idAgendamento">
+                            Agendamento disponível
+                        </label>
+
+                        <select
+                            id="idAgendamento"
+                            name="idAgendamento"
+                            required
+                            <%= possuiAgendamentos ? "" : "disabled" %>
+                        >
+
+                            <option value="">
+                                Selecione um agendamento
+                            </option>
 
 
-    </form>
+                            <%
+                                if (agendamentos != null) {
+
+                                    for (
+                                        Agendamento agendamento
+                                        : agendamentos
+                                    ) {
+                            %>
+
+                                <option
+                                    value="<%= agendamento.getIdAgendamento() %>"
+                                >
+                                    <%= agendamento.getClienteNome() %>
+                                    —
+                                    <%= agendamento.getVeiculoDescricao() %>
+                                    —
+                                    <%= agendamento.getData().format(formatoData) %>
+                                    às
+                                    <%= agendamento.getHorario().format(formatoHora) %>
+                                </option>
+
+                            <%
+                                    }
+                                }
+                            %>
+
+                        </select>
+
+                    </div>
 
 
-    <br>
+                    <p class="form-observacao">
+                        Apenas agendamentos com status AGENDADO
+                        e sem atendimento vinculado aparecem nesta lista.
+                    </p>
 
 
-    <a href="${pageContext.request.contextPath}/atendimento">
-        Voltar para a lista
-    </a>
+                    <div class="form-interno-acoes">
+
+                        <a
+                            class="botao-interno-secundario"
+                            href="${pageContext.request.contextPath}/atendimento"
+                        >
+                            Cancelar
+                        </a>
+
+
+                        <%
+                            if (possuiAgendamentos) {
+                        %>
+
+                            <button
+                                class="botao-interno-principal"
+                                type="submit"
+                            >
+                                Criar atendimento
+                            </button>
+
+                        <%
+                            }
+                        %>
+
+                    </div>
+
+                </form>
+
+            </section>
+
+        </div>
+
+    </main>
 
 
 </body>

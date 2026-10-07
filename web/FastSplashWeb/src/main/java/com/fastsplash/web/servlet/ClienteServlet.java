@@ -2,9 +2,11 @@ package com.fastsplash.web.servlet;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Locale;
 
 import com.fastsplash.web.dao.ClienteDAO;
 import com.fastsplash.web.model.Cliente;
+import com.fastsplash.web.util.SenhaUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -17,47 +19,70 @@ public class ClienteServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private final ClienteDAO clienteDAO = new ClienteDAO();
-    
+    private final ClienteDAO clienteDAO =
+            new ClienteDAO();
+
+
     @Override
     protected void doGet(
-    		
             HttpServletRequest request,
             HttpServletResponse response
     ) throws ServletException, IOException {
 
-    	String acao = request.getParameter("acao");
-    	
-    	if ("editar".equals(acao)) {
+        String acao =
+                request.getParameter(
+                        "acao"
+                );
 
-    	    int idCliente = Integer.parseInt(
-    	            request.getParameter("idCliente")
-    	    );
 
-    	    try {
+        // =========================================
+        // EDITAR
+        // =========================================
 
-    	        Cliente cliente =
-    	                clienteDAO.buscarPorId(idCliente);
+        if ("editar".equals(acao)) {
 
-    	        request.setAttribute(
-    	                "cliente",
-    	                cliente
-    	        );
+            int idCliente =
+                    Integer.parseInt(
+                            request.getParameter(
+                                    "idCliente"
+                            )
+                    );
 
-    	        request.getRequestDispatcher(
-    	                "/editar-cliente.jsp"
-    	        ).forward(request, response);
+            try {
 
-    	    } catch (SQLException e) {
+                Cliente cliente =
+                        clienteDAO.buscarPorId(
+                                idCliente
+                        );
 
-    	        throw new ServletException(
-    	                "Erro ao buscar cliente.",
-    	                e
-    	        );
-    	    }
+                request.setAttribute(
+                        "cliente",
+                        cliente
+                );
 
-    	    return;
-    	}
+                request.getRequestDispatcher(
+                        "/editar-cliente.jsp"
+                ).forward(
+                        request,
+                        response
+                );
+
+            } catch (SQLException e) {
+
+                throw new ServletException(
+                        "Erro ao buscar cliente.",
+                        e
+                );
+            }
+
+            return;
+        }
+
+
+        // =========================================
+        // LISTAR
+        // =========================================
+
         try {
 
             request.setAttribute(
@@ -67,7 +92,10 @@ public class ClienteServlet extends HttpServlet {
 
             request.getRequestDispatcher(
                     "/lista-clientes.jsp"
-            ).forward(request, response);
+            ).forward(
+                    request,
+                    response
+            );
 
         } catch (SQLException e) {
 
@@ -78,46 +106,88 @@ public class ClienteServlet extends HttpServlet {
         }
     }
 
+
     @Override
     protected void doPost(
             HttpServletRequest request,
             HttpServletResponse response
     ) throws ServletException, IOException {
 
-        request.setCharacterEncoding("UTF-8");
+        request.setCharacterEncoding(
+                "UTF-8"
+        );
 
-        String acao = request.getParameter("acao");
+        String acao =
+                request.getParameter(
+                        "acao"
+                );
 
 
-        // ATUALIZAR CLIENTE
+        // =========================================
+        // ATUALIZAR
+        // =========================================
+
         if ("atualizar".equals(acao)) {
 
-            int idCliente = Integer.parseInt(
-                    request.getParameter("idCliente")
-            );
+            int idCliente =
+                    Integer.parseInt(
+                            request.getParameter(
+                                    "idCliente"
+                            )
+                    );
 
-            String nome = request.getParameter("nome");
-            String cpf = request.getParameter("cpf");
-            String telefone = request.getParameter("telefone");
-            String email = request.getParameter("email");
+            String nome =
+                    padronizarTexto(
+                            request.getParameter(
+                                    "nome"
+                            )
+                    );
+
+            String cpf =
+                    somenteNumeros(
+                            request.getParameter(
+                                    "cpf"
+                            )
+                    );
+
+            String telefone =
+                    somenteNumeros(
+                            request.getParameter(
+                                    "telefone"
+                            )
+                    );
+
+            String email =
+                    limpar(
+                            request.getParameter(
+                                    "email"
+                            )
+                    );
 
             try {
 
                 Cliente cliente =
-                        clienteDAO.buscarPorId(idCliente);
+                        clienteDAO.buscarPorId(
+                                idCliente
+                        );
 
                 if (cliente != null) {
 
                     cliente.setNome(nome);
                     cliente.setCpf(cpf);
-                    cliente.setTelefone(telefone);
+                    cliente.setTelefone(
+                            telefone
+                    );
                     cliente.setEmail(email);
 
-                    clienteDAO.atualizar(cliente);
+                    clienteDAO.atualizar(
+                            cliente
+                    );
                 }
 
                 response.sendRedirect(
-                        request.getContextPath() + "/cliente"
+                        request.getContextPath()
+                        + "/cliente"
                 );
 
             } catch (SQLException e) {
@@ -132,19 +202,28 @@ public class ClienteServlet extends HttpServlet {
         }
 
 
-        // EXCLUIR CLIENTE
+        // =========================================
+        // EXCLUIR
+        // =========================================
+
         if ("excluir".equals(acao)) {
 
-            int idCliente = Integer.parseInt(
-                    request.getParameter("idCliente")
-            );
+            int idCliente =
+                    Integer.parseInt(
+                            request.getParameter(
+                                    "idCliente"
+                            )
+                    );
 
             try {
 
-                clienteDAO.excluir(idCliente);
+                clienteDAO.excluir(
+                        idCliente
+                );
 
                 response.sendRedirect(
-                        request.getContextPath() + "/cliente"
+                        request.getContextPath()
+                        + "/cliente"
                 );
 
             } catch (SQLException e) {
@@ -159,42 +238,112 @@ public class ClienteServlet extends HttpServlet {
         }
 
 
-        // CADASTRAR CLIENTE
-        String nome = request.getParameter("nome");
-        String cpf = request.getParameter("cpf");
-        String telefone = request.getParameter("telefone");
-        String email = request.getParameter("email");
-        String senha = request.getParameter("senha");
+        // =========================================
+        // CADASTRAR
+        // =========================================
 
-        Cliente cliente = new Cliente();
+        String nome =
+                padronizarTexto(
+                        request.getParameter(
+                                "nome"
+                        )
+                );
+
+        String cpf =
+                somenteNumeros(
+                        request.getParameter(
+                                "cpf"
+                        )
+                );
+
+        String telefone =
+                somenteNumeros(
+                        request.getParameter(
+                                "telefone"
+                        )
+                );
+
+        String email =
+                limpar(
+                        request.getParameter(
+                                "email"
+                        )
+                );
+
+        String senha =
+                limpar(
+                        request.getParameter(
+                                "senha"
+                        )
+                );
+
+        String confirmarSenha =
+                limpar(
+                        request.getParameter(
+                                "confirmarSenha"
+                        )
+                );
+
+
+        if (
+            nome == null
+            || cpf == null
+            || telefone == null
+            || email == null
+            || senha == null
+            || confirmarSenha == null
+        ) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "Preencha todos os campos."
+            );
+
+            return;
+        }
+
+
+        if (
+            !senha.equals(
+                    confirmarSenha
+            )
+        ) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "As senhas não coincidem."
+            );
+
+            return;
+        }
+
+
+        Cliente cliente =
+                new Cliente();
 
         cliente.setNome(nome);
         cliente.setCpf(cpf);
-        cliente.setTelefone(telefone);
+        cliente.setTelefone(
+                telefone
+        );
         cliente.setEmail(email);
 
-        // Temporário para nosso projeto acadêmico.
-        // Depois vamos substituir por geração real de hash.
         cliente.setSenhaHash(
-                "HASH_" + senha
+                SenhaUtil.gerarHash(
+                        senha
+                )
         );
+
 
         try {
 
-            clienteDAO.inserir(cliente);
-
-            response.setContentType(
-                    "text/html;charset=UTF-8"
+            clienteDAO.inserir(
+                    cliente
             );
 
-            response.getWriter().println(
-                    "<h1>Cliente cadastrado com sucesso!</h1>"
-            );
-
-            response.getWriter().println(
-                    "<p>ID gerado: "
-                    + cliente.getIdCliente()
-                    + "</p>"
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/cliente"
             );
 
         } catch (SQLException e) {
@@ -204,5 +353,63 @@ public class ClienteServlet extends HttpServlet {
                     e
             );
         }
+    }
+
+
+    private String limpar(
+            String valor
+    ) {
+
+        if (valor == null) {
+            return null;
+        }
+
+        valor =
+                valor.trim();
+
+        if (valor.isEmpty()) {
+            return null;
+        }
+
+        return valor;
+    }
+
+
+    private String padronizarTexto(
+            String valor
+    ) {
+
+        valor =
+                limpar(
+                        valor
+                );
+
+        if (valor == null) {
+            return null;
+        }
+
+        return valor.toUpperCase(
+                Locale.ROOT
+        );
+    }
+
+
+    private String somenteNumeros(
+            String valor
+    ) {
+
+        valor =
+                limpar(
+                        valor
+                );
+
+        if (valor == null) {
+            return null;
+        }
+
+        return valor.replaceAll(
+                "\\D",
+                ""
+        );
     }
 }

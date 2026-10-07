@@ -13,6 +13,7 @@ public class Atendimento {
     private LocalDateTime dataFim;
 
     // Campos auxiliares para exibição
+    private String clienteNome;
     private String veiculoDescricao;
     private String servicosDescricao;
 
@@ -88,6 +89,20 @@ public class Atendimento {
 
         this.dataFim =
                 dataFim;
+    }
+
+
+    public String getClienteNome() {
+        return clienteNome;
+    }
+
+
+    public void setClienteNome(
+            String clienteNome
+    ) {
+
+        this.clienteNome =
+                clienteNome;
     }
 
 

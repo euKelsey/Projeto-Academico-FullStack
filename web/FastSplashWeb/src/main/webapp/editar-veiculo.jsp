@@ -8,187 +8,324 @@
 
 <%
     Veiculo veiculo =
-        (Veiculo) request.getAttribute("veiculo");
+            (Veiculo) request.getAttribute(
+                    "veiculo"
+            );
 
     List<Cliente> clientes =
-        (List<Cliente>) request.getAttribute("clientes");
+            (List<Cliente>) request.getAttribute(
+                    "clientes"
+            );
 %>
 
 <!DOCTYPE html>
-<html>
+
+<html lang="pt-BR">
 
 <head>
 
     <meta charset="UTF-8">
 
-    <title>
-        Editar Veículo - Fast Splash
-    </title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Editar veículo | Fast Splash</title>
+
+    <link
+        rel="stylesheet"
+        href="${pageContext.request.contextPath}/css/site.css"
+    >
 
 </head>
 
-<body>
 
-    <h1>Editar Veículo</h1>
-
-
-    <form
-        action="${pageContext.request.contextPath}/veiculo"
-        method="post"
-    >
+<body class="pagina-interna">
 
 
-        <input
-            type="hidden"
-            name="acao"
-            value="atualizar"
-        >
+    <header class="interna-topo">
+
+        <div class="container interna-topo-conteudo">
+
+            <div class="marca-cabecalho">
+
+                <div class="marca-nome">
+
+                    <span class="marca-fast">
+                        Fast
+                    </span>
+
+                    <span class="marca-splash">
+                        Splash
+                    </span>
+
+                </div>
+
+                <span class="marca-subtitulo">
+                    GESTÃO
+                </span>
+
+            </div>
 
 
-        <input
-            type="hidden"
-            name="idVeiculo"
-            value="<%= veiculo.getIdVeiculo() %>"
-        >
+            <div class="interna-topo-acoes">
+
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/veiculo"
+                >
+                    ← Veículos
+                </a>
+
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/dashboard.jsp"
+                >
+                    Dashboard
+                </a>
+
+            </div>
+
+        </div>
+
+    </header>
 
 
-        <label for="idCliente">
-            Cliente:
-        </label>
+    <main class="interna-principal">
 
-        <br>
+        <div class="container">
 
 
-        <select
-            id="idCliente"
-            name="idCliente"
-            required
-        >
+            <section class="interna-cabecalho">
+
+                <div>
+
+                    <span class="destaque-pequeno">
+                        Gestão de veículos
+                    </span>
+
+                    <h1>
+                        Editar veículo
+                    </h1>
+
+                    <p>
+                        Atualize o proprietário
+                        ou os dados do veículo selecionado.
+                    </p>
+
+                </div>
+
+            </section>
 
 
-            <%
-                if (clientes != null) {
+            <section class="form-interno-card">
 
-                    for (Cliente cliente : clientes) {
+                <div class="form-interno-topo">
 
-                        boolean selecionado =
-                            cliente.getIdCliente()
-                            == veiculo.getIdCliente();
-            %>
+                    <h2>
+                        <%= veiculo.getMarca() %>
+                        <%= veiculo.getModelo() %>
+                    </h2>
 
+                    <p>
+                        Veículo ID #<%= veiculo.getIdVeiculo() %>
+                        · Placa <%= veiculo.getPlaca() %>
+                    </p>
 
-            <option
-                value="<%= cliente.getIdCliente() %>"
-                <%= selecionado ? "selected" : "" %>
-            >
-
-                <%= cliente.getNome() %>
-
-            </option>
+                </div>
 
 
-            <%
-                    }
-                }
-            %>
+                <form
+                    class="form-interno"
+                    action="${pageContext.request.contextPath}/veiculo"
+                    method="post"
+                >
+
+                    <input
+                        type="hidden"
+                        name="acao"
+                        value="atualizar"
+                    >
+
+                    <input
+                        type="hidden"
+                        name="idVeiculo"
+                        value="<%= veiculo.getIdVeiculo() %>"
+                    >
 
 
-        </select>
+                    <div class="campo-interno campo-interno-largo">
+
+                        <label for="idCliente">
+                            Cliente proprietário
+                        </label>
+
+                        <select
+                            id="idCliente"
+                            name="idCliente"
+                            required
+                        >
+
+                            <%
+                                if (clientes != null) {
+
+                                    for (
+                                        Cliente cliente
+                                        : clientes
+                                    ) {
+
+                                        boolean selecionado =
+                                                cliente.getIdCliente()
+                                                == veiculo.getIdCliente();
+                            %>
+
+                                <option
+                                    value="<%= cliente.getIdCliente() %>"
+                                    <%= selecionado ? "selected" : "" %>
+                                >
+                                    <%= cliente.getNome() %>
+                                    — ID #<%= cliente.getIdCliente() %>
+                                </option>
+
+                            <%
+                                    }
+                                }
+                            %>
+
+                        </select>
+
+                    </div>
 
 
-        <br><br>
+                    <div class="campo-interno">
+
+                        <label for="placa">
+                            Placa
+                        </label>
+
+                        <input
+                            type="text"
+                            id="placa"
+                            name="placa"
+                            maxlength="7"
+                            minlength="7"
+                            pattern="[A-Za-z]{3}([0-9]{4}|[0-9][A-Za-z][0-9]{2})"
+                            title="Use uma placa brasileira válida, como ABC1234 ou ABC1D23"
+                            value="<%= veiculo.getPlaca() %>"
+                            required
+                        >
+
+                    </div>
 
 
-        <label for="placa">
-            Placa:
-        </label>
+                    <div class="campo-interno">
 
-        <br>
+                        <label for="cor">
+                            Cor
+                        </label>
 
+                        <input
+                            type="text"
+                            id="cor"
+                            name="cor"
+                            class="texto-maiusculo"
+                            value="<%= veiculo.getCor() %>"
+                            required
+                        >
 
-        <input
-            type="text"
-            id="placa"
-            name="placa"
-            value="<%= veiculo.getPlaca() %>"
-            required
-        >
-
-
-        <br><br>
-
-
-        <label for="marca">
-            Marca:
-        </label>
-
-        <br>
+                    </div>
 
 
-        <input
-            type="text"
-            id="marca"
-            name="marca"
-            value="<%= veiculo.getMarca() %>"
-            required
-        >
+                    <div class="campo-interno">
+
+                        <label for="marca">
+                            Marca
+                        </label>
+
+                        <input
+                            type="text"
+                            id="marca"
+                            name="marca"
+                            class="texto-maiusculo"
+                            value="<%= veiculo.getMarca() %>"
+                            required
+                        >
+
+                    </div>
 
 
-        <br><br>
+                    <div class="campo-interno">
+
+                        <label for="modelo">
+                            Modelo
+                        </label>
+
+                        <input
+                            type="text"
+                            id="modelo"
+                            name="modelo"
+                            class="texto-maiusculo"
+                            value="<%= veiculo.getModelo() %>"
+                            required
+                        >
+
+                    </div>
 
 
-        <label for="modelo">
-            Modelo:
-        </label>
+                    <div class="form-interno-acoes">
 
-        <br>
+                        <a
+                            class="botao-interno-secundario"
+                            href="${pageContext.request.contextPath}/veiculo"
+                        >
+                            Cancelar
+                        </a>
 
+                        <button
+                            class="botao-interno-principal"
+                            type="submit"
+                        >
+                            Salvar alterações
+                        </button>
 
-        <input
-            type="text"
-            id="modelo"
-            name="modelo"
-            value="<%= veiculo.getModelo() %>"
-            required
-        >
+                    </div>
 
+                </form>
 
-        <br><br>
+            </section>
 
+        </div>
 
-        <label for="cor">
-            Cor:
-        </label>
-
-        <br>
-
-
-        <input
-            type="text"
-            id="cor"
-            name="cor"
-            value="<%= veiculo.getCor() %>"
-            required
-        >
+    </main>
 
 
-        <br><br>
+    <script>
 
+        const campoPlaca =
+            document.getElementById(
+                "placa"
+            );
 
-        <button type="submit">
-            Salvar Alterações
-        </button>
+        campoPlaca.addEventListener(
+            "input",
+            function () {
 
+                campoPlaca.value =
+                    campoPlaca.value
+                        .toUpperCase()
+                        .replace(
+                            /[^A-Z0-9]/g,
+                            ""
+                        )
+                        .slice(
+                            0,
+                            7
+                        );
+            }
+        );
 
-    </form>
-
-
-    <br>
-
-
-    <a href="${pageContext.request.contextPath}/veiculo">
-        Voltar para a lista
-    </a>
+    </script>
 
 
 </body>
