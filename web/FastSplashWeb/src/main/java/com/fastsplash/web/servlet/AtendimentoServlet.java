@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 
 import com.fastsplash.web.dao.AtendimentoDAO;
+import com.fastsplash.web.dao.PagamentoDAO;
 import com.fastsplash.web.model.Atendimento;
 
 import jakarta.servlet.ServletException;
@@ -22,6 +23,9 @@ public class AtendimentoServlet
 
     private final AtendimentoDAO atendimentoDAO =
             new AtendimentoDAO();
+
+    private final PagamentoDAO pagamentoDAO =
+            new PagamentoDAO();
 
 
     // =========================================
@@ -108,29 +112,10 @@ public class AtendimentoServlet
 
 
         // LISTAR
-        try {
-
-            request.setAttribute(
-                    "atendimentos",
-                    atendimentoDAO.listarTodos()
-            );
-
-
-            request.getRequestDispatcher(
-                    "/lista-atendimentos.jsp"
-            ).forward(
-                    request,
-                    response
-            );
-
-
-        } catch (SQLException e) {
-
-            throw new ServletException(
-                    "Erro ao listar atendimentos.",
-                    e
-            );
-        }
+        carregarLista(
+                request,
+                response
+        );
     }
 
 
@@ -180,9 +165,14 @@ public class AtendimentoServlet
 
             } catch (SQLException e) {
 
-                throw new ServletException(
-                        "Erro ao iniciar lavagem.",
-                        e
+                request.setAttribute(
+                        "erro",
+                        e.getMessage()
+                );
+
+                carregarLista(
+                        request,
+                        response
                 );
             }
 
@@ -308,6 +298,45 @@ public class AtendimentoServlet
 
             throw new ServletException(
                     "Erro ao criar atendimento.",
+                    e
+            );
+        }
+    }
+
+
+    // =========================================
+    // CARREGAR LISTA
+    // =========================================
+
+    private void carregarLista(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws ServletException, IOException {
+
+        try {
+
+            request.setAttribute(
+                    "atendimentos",
+                    atendimentoDAO.listarTodos()
+            );
+
+            request.setAttribute(
+                    "agendamentosPagos",
+                    pagamentoDAO
+                            .listarAgendamentosPagos()
+            );
+
+            request.getRequestDispatcher(
+                    "/lista-atendimentos.jsp"
+            ).forward(
+                    request,
+                    response
+            );
+
+        } catch (SQLException e) {
+
+            throw new ServletException(
+                    "Erro ao listar atendimentos.",
                     e
             );
         }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/agendamento.dart';
-import '../models/pagamento.dart';
 import '../services/api_service.dart';
+
 
 class HistoricoServicosScreen
     extends StatefulWidget {
@@ -11,48 +11,51 @@ class HistoricoServicosScreen
     super.key,
   });
 
+
   @override
-  State<HistoricoServicosScreen>
-      createState() =>
-          _HistoricoServicosScreenState();
+  State<HistoricoServicosScreen> createState() =>
+      _HistoricoServicosScreenState();
 }
 
 
 class _HistoricoServicosScreenState
     extends State<HistoricoServicosScreen> {
 
-  List<Agendamento> agendamentos = [];
-  List<Pagamento> pagamentos = [];
+  List<Agendamento> historico = [];
 
   bool carregando = true;
 
 
+  // =====================================================
+  // INIT
+  // =====================================================
+
   @override
   void initState() {
+
     super.initState();
 
     carregarHistorico();
   }
 
 
-  // ==========================================
-  // CARREGAR
-  // ==========================================
+  // =====================================================
+  // CARREGAR HISTÓRICO
+  // =====================================================
 
   Future<void> carregarHistorico() async {
 
+    setState(() {
+
+      carregando = true;
+    });
+
+
     try {
 
-      final List<Agendamento>
-          agendamentosResultado =
+      final List<Agendamento> resultado =
           await ApiService
               .listarAgendamentos();
-
-
-      final List<Pagamento>
-          pagamentosResultado =
-          await ApiService
-              .listarPagamentos();
 
 
       if (!mounted) {
@@ -62,13 +65,24 @@ class _HistoricoServicosScreenState
 
       setState(() {
 
-        agendamentos =
-            agendamentosResultado;
+        historico =
+            resultado.where(
+          (agendamento) {
 
-        pagamentos =
-            pagamentosResultado;
+            final String status =
+                agendamento.status
+                    .toUpperCase();
+
+
+            return status ==
+                    'CONCLUIDO' ||
+                status ==
+                    'FINALIZADO' ||
+                status ==
+                    'CANCELADO';
+          },
+        ).toList();
       });
-
 
     } catch (e) {
 
@@ -79,12 +93,12 @@ class _HistoricoServicosScreenState
 
       mostrarErro(e);
 
-
     } finally {
 
       if (mounted) {
 
         setState(() {
+
           carregando = false;
         });
       }
@@ -92,136 +106,112 @@ class _HistoricoServicosScreenState
   }
 
 
-  // ==========================================
-  // HISTÓRICO
-  // ==========================================
+  // =====================================================
+  // FORMATAR DATA
+  // =====================================================
 
-  List<Agendamento> get historico {
-
-    return agendamentos
-        .where(
-          (agendamento) =>
-              agendamento.status ==
-                  'Finalizado'
-              ||
-              agendamento.status ==
-                  'Cancelado',
-        )
-        .toList();
-  }
-
-
-  // ==========================================
-  // BUSCAR PAGAMENTO DO AGENDAMENTO
-  // ==========================================
-
-  Pagamento? buscarPagamento(
-    int idAgendamento,
+  String formatarData(
+    String data,
   ) {
 
-    for (
-      final Pagamento pagamento
-          in pagamentos
-    ) {
+    final List<String> partes =
+        data.split('-');
 
-      if (
-        pagamento.idAgendamento ==
-            idAgendamento
-      ) {
 
-        return pagamento;
-      }
+    if (partes.length != 3) {
+
+      return data;
     }
 
-    return null;
+
+    return
+        '${partes[2]}/'
+        '${partes[1]}/'
+        '${partes[0]}';
   }
 
 
-  // ==========================================
-  // NOME DA FORMA
-  // ==========================================
+  // =====================================================
+  // STATUS
+  // =====================================================
 
-  String nomeFormaPagamento(
-    String forma,
-  ) {
-
-    switch (forma) {
-
-      case 'PIX':
-        return 'PIX';
-
-      case 'CREDITO':
-        return 'Crédito';
-
-      case 'DEBITO':
-        return 'Débito';
-
-      case 'DINHEIRO':
-        return 'Dinheiro';
-
-      default:
-        return forma;
-    }
-  }
-
-
-  // ==========================================
-  // STATUS DO PAGAMENTO
-  // ==========================================
-
-  String textoPagamento(
+  bool foiCancelado(
     Agendamento agendamento,
   ) {
 
-    if (
-      agendamento.status ==
-          'Cancelado'
-    ) {
+    return agendamento.status
+            .toUpperCase() ==
+        'CANCELADO';
+  }
 
-      return 'Pagamento: Não realizado';
+
+  String nomeStatus(
+    Agendamento agendamento,
+  ) {
+
+    if (foiCancelado(
+      agendamento,
+    )) {
+
+      return 'Cancelado';
     }
 
 
-    final Pagamento? pagamento =
-        buscarPagamento(
-      agendamento.idAgendamento,
+    return 'Concluído';
+  }
+
+
+  // =====================================================
+  // MENSAGEM DE ERRO
+  // =====================================================
+
+  void mostrarErro(
+    Object erro,
+  ) {
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+
+      SnackBar(
+
+        content:
+            Text(
+
+          erro
+              .toString()
+              .replaceFirst(
+                'Exception: ',
+                '',
+              ),
+        ),
+      ),
+    );
+  }
+
+
+  // =====================================================
+  // CARD DO HISTÓRICO
+  // =====================================================
+
+  Widget cardHistorico(
+    Agendamento agendamento,
+  ) {
+
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
+
+    final bool cancelado =
+        foiCancelado(
+      agendamento,
     );
 
+    final Color corStatus =
+        cancelado
+            ? cores.error
+            : Colors.green;
 
-    if (
-      pagamento == null
-      ||
-      pagamento.statusPagamento ==
-          'PENDENTE'
-    ) {
-
-      return 'Pagamento: Pendente';
-    }
-
-
-    if (
-      pagamento.statusPagamento ==
-          'PAGO'
-    ) {
-
-      return 'Pagamento: Pago';
-    }
-
-
-    return 'Pagamento: '
-        '${pagamento.statusPagamento}';
-  }
-
-
-  // ==========================================
-  // DETALHES
-  // ==========================================
-
-  void abrirDetalhes(
-    Agendamento agendamento,
-  ) {
-
-    final String nomesServicos =
+    final String servicos =
         agendamento.servicos
             .map(
               (servico) =>
@@ -230,240 +220,1158 @@ class _HistoricoServicosScreenState
             .join(', ');
 
 
-    final Pagamento? pagamento =
-        buscarPagamento(
-      agendamento.idAgendamento,
-    );
+    return InkWell(
 
+      borderRadius:
+          BorderRadius.circular(
+        18,
+      ),
 
-    final bool pago =
-        pagamento != null
-        &&
-        pagamento.statusPagamento ==
-            'PAGO';
+      onTap: () {
 
+        abrirDetalhes(
+          agendamento,
+        );
+      },
 
-    showDialog(
-      context: context,
+      child:
+          Container(
 
-      builder: (context) {
+        margin:
+            const EdgeInsets.only(
+          bottom: 14,
+        ),
 
-        return AlertDialog(
+        padding:
+            const EdgeInsets.all(
+          18,
+        ),
 
-          title:
-              const Text(
-            'Detalhes do Serviço',
+        decoration:
+            BoxDecoration(
+
+          color:
+              cores
+                  .surfaceContainerHighest,
+
+          borderRadius:
+              BorderRadius.circular(
+            18,
           ),
 
-          content:
-              SingleChildScrollView(
+          border:
+              Border.all(
 
-            child: Column(
+            color:
+                cores
+                    .outlineVariant,
+          ),
+        ),
 
-              mainAxisSize:
-                  MainAxisSize.min,
+        child:
+            Column(
 
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+
+          children: [
+
+            // =================================
+            // CABEÇALHO
+            // =================================
+
+            Row(
 
               children: [
 
-                Text(
-                  'Veículo: '
-                  '${agendamento.veiculo.marca} '
-                  '${agendamento.veiculo.modelo}',
-                ),
+                Container(
 
-                const SizedBox(
-                  height: 12,
-                ),
+                  width: 48,
+                  height: 48,
 
-                Text(
-                  'Placa: '
-                  '${agendamento.veiculo.placa}',
-                ),
+                  decoration:
+                      BoxDecoration(
 
-                const SizedBox(
-                  height: 12,
-                ),
+                    borderRadius:
+                        BorderRadius.circular(
+                      13,
+                    ),
 
-                Text(
-                  'Serviços: '
-                  '$nomesServicos',
-                ),
-
-                const SizedBox(
-                  height: 12,
-                ),
-
-                Text(
-                  'Data: '
-                  '${agendamento.data}',
-                ),
-
-                const SizedBox(
-                  height: 12,
-                ),
-
-                Text(
-                  'Horário: '
-                  '${agendamento.horario}',
-                ),
-
-                const SizedBox(
-                  height: 12,
-                ),
-
-                Text(
-                  'Valor: R\$ '
-                  '${agendamento.valorTotal.toStringAsFixed(2)}',
-                ),
-
-                const SizedBox(
-                  height: 12,
-                ),
-
-                Text(
-                  'Status: '
-                  '${agendamento.status}',
-                  style:
-                      const TextStyle(
-                    fontWeight:
-                        FontWeight.bold,
+                    color:
+                        corStatus
+                            .withValues(
+                          alpha: 0.10,
+                        ),
                   ),
-                ),
 
-                const SizedBox(
-                  height: 20,
-                ),
+                  child:
+                      Icon(
 
-                const Divider(),
+                    cancelado
+                        ? Icons
+                            .cancel_outlined
+                        : Icons
+                            .check_circle_outline,
 
-                const SizedBox(
-                  height: 12,
-                ),
-
-                const Text(
-                  'Pagamento',
-                  style:
-                      TextStyle(
-                    fontSize: 17,
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 12,
-                ),
-
-                Text(
-                  textoPagamento(
-                    agendamento,
+                    color:
+                        corStatus,
                   ),
                 ),
 
 
-                if (pago) ...[
+                const SizedBox(
+                  width: 14,
+                ),
 
-                  const SizedBox(
-                    height: 8,
-                  ),
 
-                  Text(
-                    'Forma de pagamento: '
-                    '${nomeFormaPagamento(
-                      pagamento
-                          .formaPagamento,
-                    )}',
-                  ),
+                Expanded(
 
-                  const SizedBox(
-                    height: 8,
-                  ),
+                  child:
+                      Column(
 
-                  Text(
-                    'Data do pagamento: '
-                    '${pagamento.dataPagamento}',
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+
+                    children: [
+
+                      Text(
+
+                        '${agendamento.veiculo.marca} '
+                        '${agendamento.veiculo.modelo}',
+
+                        style:
+                            TextStyle(
+
+                          color:
+                              cores.onSurface,
+
+                          fontSize: 16,
+
+                          fontWeight:
+                              FontWeight.w800,
+                        ),
+                      ),
+
+
+                      const SizedBox(
+                        height: 4,
+                      ),
+
+
+                      Text(
+
+                        agendamento
+                            .veiculo
+                            .placa,
+
+                        style:
+                            TextStyle(
+
+                          color:
+                              cores.onSurface
+                                  .withValues(
+                                alpha: 0.55,
+                              ),
+
+                          fontSize: 12,
+
+                          fontWeight:
+                              FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
+
+
+                Icon(
+
+                  Icons.chevron_right,
+
+                  color:
+                      cores.onSurface
+                          .withValues(
+                        alpha: 0.40,
+                      ),
+                ),
               ],
             ),
-          ),
 
-          actions: [
 
-            TextButton(
-              onPressed: () {
+            const SizedBox(
+              height: 16,
+            ),
 
-                Navigator.pop(
-                  context,
-                );
-              },
+
+            // =================================
+            // STATUS
+            // =================================
+
+            Container(
+
+              padding:
+                  const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 7,
+              ),
+
+              decoration:
+                  BoxDecoration(
+
+                color:
+                    corStatus
+                        .withValues(
+                      alpha: 0.08,
+                    ),
+
+                borderRadius:
+                    BorderRadius.circular(
+                  20,
+                ),
+
+                border:
+                    Border.all(
+
+                  color:
+                      corStatus
+                          .withValues(
+                        alpha: 0.22,
+                      ),
+                ),
+              ),
 
               child:
-                  const Text(
-                'Fechar',
+                  Row(
+
+                mainAxisSize:
+                    MainAxisSize.min,
+
+                children: [
+
+                  Icon(
+
+                    cancelado
+                        ? Icons
+                            .cancel_outlined
+                        : Icons
+                            .check_circle_outline,
+
+                    color:
+                        corStatus,
+
+                    size: 14,
+                  ),
+
+
+                  const SizedBox(
+                    width: 6,
+                  ),
+
+
+                  Text(
+
+                    nomeStatus(
+                      agendamento,
+                    ),
+
+                    style:
+                        TextStyle(
+
+                      color:
+                          corStatus,
+
+                      fontSize: 11,
+
+                      fontWeight:
+                          FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
             ),
+
+
+            const SizedBox(
+              height: 14,
+            ),
+
+
+            // =================================
+            // SERVIÇOS
+            // =================================
+
+            Text(
+
+              servicos.isEmpty
+                  ? 'Serviço não informado'
+                  : servicos,
+
+              style:
+                  TextStyle(
+
+                color:
+                    cores.onSurface
+                        .withValues(
+                      alpha: 0.72,
+                    ),
+
+                fontSize: 13,
+
+                height: 1.4,
+              ),
+            ),
+
+
+            const SizedBox(
+              height: 14,
+            ),
+
+
+            // =================================
+            // INFORMAÇÕES
+            // =================================
+
+            Wrap(
+
+              spacing: 8,
+
+              runSpacing: 8,
+
+              children: [
+
+                chipInformacao(
+
+                  Icons
+                      .event_outlined,
+
+                  formatarData(
+                    agendamento.data,
+                  ),
+                ),
+
+
+                chipInformacao(
+
+                  Icons
+                      .schedule_outlined,
+
+                  agendamento.horario,
+                ),
+
+
+                chipInformacao(
+
+                  Icons
+                      .payments_outlined,
+
+                  'R\$ '
+                  '${agendamento.valorTotal.toStringAsFixed(2)}',
+                ),
+              ],
+            ),
           ],
-        );
-      },
-    );
-  }
-
-
-  // ==========================================
-  // ERRO
-  // ==========================================
-
-  void mostrarErro(
-    Object erro,
-  ) {
-
-    String mensagem =
-        erro.toString();
-
-
-    mensagem =
-        mensagem.replaceFirst(
-      'Exception: ',
-      '',
-    );
-
-
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      SnackBar(
-        content: Text(
-          mensagem,
         ),
       ),
     );
   }
 
 
-  // ==========================================
+  // =====================================================
+  // CHIP
+  // =====================================================
+
+  Widget chipInformacao(
+    IconData icone,
+    String texto,
+  ) {
+
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
+
+
+    return Container(
+
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 9,
+        vertical: 6,
+      ),
+
+      decoration:
+          BoxDecoration(
+
+        color:
+            cores.onSurface
+                .withValues(
+              alpha: 0.04,
+            ),
+
+        borderRadius:
+            BorderRadius.circular(
+          20,
+        ),
+
+        border:
+            Border.all(
+
+          color:
+              cores.outlineVariant,
+        ),
+      ),
+
+      child:
+          Row(
+
+        mainAxisSize:
+            MainAxisSize.min,
+
+        children: [
+
+          Icon(
+
+            icone,
+
+            size: 13,
+
+            color:
+                cores.secondary,
+          ),
+
+
+          const SizedBox(
+            width: 5,
+          ),
+
+
+          Text(
+
+            texto,
+
+            style:
+                TextStyle(
+
+              color:
+                  cores.onSurface
+                      .withValues(
+                    alpha: 0.72,
+                  ),
+
+              fontSize: 10,
+
+              fontWeight:
+                  FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  // =====================================================
+  // DETALHES
+  // =====================================================
+
+  void abrirDetalhes(
+    Agendamento agendamento,
+  ) {
+
+    final bool cancelado =
+        foiCancelado(
+      agendamento,
+    );
+
+    final String servicos =
+        agendamento.servicos
+            .map(
+              (servico) =>
+                  servico.nome,
+            )
+            .join(', ');
+
+
+    showModalBottomSheet(
+
+      context: context,
+
+      isScrollControlled: true,
+
+      useSafeArea: true,
+
+      backgroundColor:
+          Colors.transparent,
+
+      builder:
+          (BuildContext context) {
+
+        final ColorScheme cores =
+            Theme.of(context)
+                .colorScheme;
+
+        final Color corStatus =
+            cancelado
+                ? cores.error
+                : Colors.green;
+
+
+        return Container(
+
+          decoration:
+              BoxDecoration(
+
+            color:
+                cores.surface,
+
+            borderRadius:
+                const BorderRadius.vertical(
+
+              top:
+                  Radius.circular(
+                26,
+              ),
+            ),
+          ),
+
+          child:
+              SingleChildScrollView(
+
+            physics:
+                const ClampingScrollPhysics(),
+
+            padding:
+                const EdgeInsets.fromLTRB(
+              20,
+              18,
+              20,
+              30,
+            ),
+
+            child:
+                Column(
+
+              crossAxisAlignment:
+                  CrossAxisAlignment.stretch,
+
+              children: [
+
+                // =========================
+                // BARRINHA
+                // =========================
+
+                Center(
+
+                  child:
+                      Container(
+
+                    width: 42,
+                    height: 4,
+
+                    decoration:
+                        BoxDecoration(
+
+                      color:
+                          cores.onSurface
+                              .withValues(
+                            alpha: 0.18,
+                          ),
+
+                      borderRadius:
+                          BorderRadius.circular(
+                        20,
+                      ),
+                    ),
+                  ),
+                ),
+
+
+                const SizedBox(
+                  height: 24,
+                ),
+
+
+                // =========================
+                // TÍTULO
+                // =========================
+
+                Row(
+
+                  children: [
+
+                    Container(
+
+                      width: 50,
+                      height: 50,
+
+                      decoration:
+                          BoxDecoration(
+
+                        borderRadius:
+                            BorderRadius.circular(
+                          14,
+                        ),
+
+                        color:
+                            corStatus
+                                .withValues(
+                              alpha: 0.10,
+                            ),
+                      ),
+
+                      child:
+                          Icon(
+
+                        cancelado
+                            ? Icons
+                                .cancel_outlined
+                            : Icons
+                                .check_circle_outline,
+
+                        color:
+                            corStatus,
+
+                        size: 27,
+                      ),
+                    ),
+
+
+                    const SizedBox(
+                      width: 14,
+                    ),
+
+
+                    Expanded(
+
+                      child:
+                          Column(
+
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+
+                        children: [
+
+                          Text(
+
+                            nomeStatus(
+                              agendamento,
+                            ),
+
+                            style:
+                                TextStyle(
+
+                              color:
+                                  cores.onSurface,
+
+                              fontSize: 22,
+
+                              fontWeight:
+                                  FontWeight.w900,
+                            ),
+                          ),
+
+
+                          const SizedBox(
+                            height: 3,
+                          ),
+
+
+                          Text(
+
+                            cancelado
+                                ? 'Este agendamento foi cancelado.'
+                                : 'Este serviço foi concluído.',
+
+                            style:
+                                TextStyle(
+
+                              color:
+                                  cores.onSurface
+                                      .withValues(
+                                    alpha: 0.57,
+                                  ),
+
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+
+                const SizedBox(
+                  height: 27,
+                ),
+
+
+                // =========================
+                // VEÍCULO
+                // =========================
+
+                tituloDetalhe(
+                  'Veículo',
+                ),
+
+
+                const SizedBox(
+                  height: 8,
+                ),
+
+
+                valorDetalhe(
+
+                  '${agendamento.veiculo.marca} '
+                  '${agendamento.veiculo.modelo} — '
+                  '${agendamento.veiculo.placa}',
+                ),
+
+
+                const SizedBox(
+                  height: 20,
+                ),
+
+
+                // =========================
+                // SERVIÇOS
+                // =========================
+
+                tituloDetalhe(
+                  'Serviços',
+                ),
+
+
+                const SizedBox(
+                  height: 8,
+                ),
+
+
+                valorDetalhe(
+
+                  servicos.isEmpty
+                      ? 'Não informado'
+                      : servicos,
+                ),
+
+
+                const SizedBox(
+                  height: 20,
+                ),
+
+
+                // =========================
+                // DATA
+                // =========================
+
+                Row(
+
+                  children: [
+
+                    Expanded(
+
+                      child:
+                          blocoDetalhe(
+
+                        titulo:
+                            'Data',
+
+                        valor:
+                            formatarData(
+                          agendamento.data,
+                        ),
+
+                        icone:
+                            Icons
+                                .calendar_month_outlined,
+                      ),
+                    ),
+
+
+                    const SizedBox(
+                      width: 12,
+                    ),
+
+
+                    Expanded(
+
+                      child:
+                          blocoDetalhe(
+
+                        titulo:
+                            'Horário',
+
+                        valor:
+                            agendamento.horario,
+
+                        icone:
+                            Icons
+                                .schedule_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+
+
+                const SizedBox(
+                  height: 12,
+                ),
+
+
+                blocoDetalhe(
+
+                  titulo:
+                      'Valor do serviço',
+
+                  valor:
+                      'R\$ '
+                      '${agendamento.valorTotal.toStringAsFixed(2)}',
+
+                  icone:
+                      Icons
+                          .payments_outlined,
+                ),
+
+
+                const SizedBox(
+                  height: 28,
+                ),
+
+
+                OutlinedButton(
+
+                  onPressed: () {
+
+                    Navigator.pop(
+                      context,
+                    );
+                  },
+
+                  child:
+                      const Text(
+                    'Fechar',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+
+  // =====================================================
+  // TÍTULO DO DETALHE
+  // =====================================================
+
+  Widget tituloDetalhe(
+    String texto,
+  ) {
+
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
+
+
+    return Text(
+
+      texto,
+
+      style:
+          TextStyle(
+
+        color:
+            cores.onSurface
+                .withValues(
+              alpha: 0.55,
+            ),
+
+        fontSize: 11,
+
+        fontWeight:
+            FontWeight.w700,
+      ),
+    );
+  }
+
+
+  // =====================================================
+  // VALOR DO DETALHE
+  // =====================================================
+
+  Widget valorDetalhe(
+    String texto,
+  ) {
+
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
+
+
+    return Text(
+
+      texto,
+
+      style:
+          TextStyle(
+
+        color:
+            cores.onSurface,
+
+        fontSize: 14,
+
+        fontWeight:
+            FontWeight.w700,
+
+        height: 1.4,
+      ),
+    );
+  }
+
+
+  // =====================================================
+  // BLOCO DE DETALHE
+  // =====================================================
+
+  Widget blocoDetalhe({
+
+    required String titulo,
+
+    required String valor,
+
+    required IconData icone,
+  }) {
+
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
+
+
+    return Container(
+
+      padding:
+          const EdgeInsets.all(
+        14,
+      ),
+
+      decoration:
+          BoxDecoration(
+
+        color:
+            cores
+                .surfaceContainerHighest,
+
+        borderRadius:
+            BorderRadius.circular(
+          14,
+        ),
+
+        border:
+            Border.all(
+
+          color:
+              cores.outlineVariant,
+        ),
+      ),
+
+      child:
+          Column(
+
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+
+        children: [
+
+          Icon(
+
+            icone,
+
+            color:
+                cores.secondary,
+
+            size: 20,
+          ),
+
+
+          const SizedBox(
+            height: 9,
+          ),
+
+
+          Text(
+
+            titulo,
+
+            style:
+                TextStyle(
+
+              color:
+                  cores.onSurface
+                      .withValues(
+                    alpha: 0.52,
+                  ),
+
+              fontSize: 10,
+
+              fontWeight:
+                  FontWeight.w700,
+            ),
+          ),
+
+
+          const SizedBox(
+            height: 3,
+          ),
+
+
+          Text(
+
+            valor,
+
+            style:
+                TextStyle(
+
+              color:
+                  cores.onSurface,
+
+              fontWeight:
+                  FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  // =====================================================
+  // ESTADO VAZIO
+  // =====================================================
+
+  Widget estadoVazio() {
+
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
+
+
+    return Container(
+
+      padding:
+          const EdgeInsets.all(
+        28,
+      ),
+
+      decoration:
+          BoxDecoration(
+
+        color:
+            cores.surfaceContainerHighest,
+
+        borderRadius:
+            BorderRadius.circular(
+          18,
+        ),
+
+        border:
+            Border.all(
+
+          color:
+              cores.outlineVariant,
+        ),
+      ),
+
+      child:
+          Column(
+
+        children: [
+
+          Icon(
+
+            Icons.history,
+
+            size: 55,
+
+            color:
+                cores.secondary,
+          ),
+
+
+          const SizedBox(
+            height: 16,
+          ),
+
+
+          Text(
+
+            'Histórico vazio',
+
+            style:
+                TextStyle(
+
+              color:
+                  cores.onSurface,
+
+              fontSize: 17,
+
+              fontWeight:
+                  FontWeight.w800,
+            ),
+          ),
+
+
+          const SizedBox(
+            height: 7,
+          ),
+
+
+          Text(
+
+            'Serviços concluídos e agendamentos cancelados aparecerão aqui.',
+
+            textAlign:
+                TextAlign.center,
+
+            style:
+                TextStyle(
+
+              color:
+                  cores.onSurface
+                      .withValues(
+                    alpha: 0.58,
+                  ),
+
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  // =====================================================
   // BUILD
-  // ==========================================
+  // =====================================================
 
   @override
   Widget build(
     BuildContext context,
   ) {
 
-    final List<Agendamento>
-        listaHistorico =
-        historico;
+    final ColorScheme cores =
+        Theme.of(context)
+            .colorScheme;
 
 
     return Scaffold(
 
       appBar:
           AppBar(
+
         title:
             const Text(
-          'Histórico de Serviços',
+          'Histórico',
         ),
       ),
 
@@ -472,6 +1380,7 @@ class _HistoricoServicosScreenState
           carregando
 
               ? const Center(
+
                   child:
                       CircularProgressIndicator(),
                 )
@@ -482,201 +1391,85 @@ class _HistoricoServicosScreenState
                       carregarHistorico,
 
                   child:
-                      listaHistorico.isEmpty
+                      ListView(
 
-                          ? ListView(
+                    physics:
+                        const AlwaysScrollableScrollPhysics(
+                      parent:
+                          ClampingScrollPhysics(),
+                    ),
 
-                              physics:
-                                  const AlwaysScrollableScrollPhysics(),
+                    padding:
+                        const EdgeInsets.fromLTRB(
+                      20,
+                      18,
+                      20,
+                      30,
+                    ),
 
-                              children:
-                                  const [
+                    children: [
 
-                                SizedBox(
-                                  height:
-                                      250,
-                                ),
+                      Text(
 
-                                Center(
-                                  child:
-                                      Text(
-                                    'Nenhum serviço no histórico',
-                                  ),
-                                ),
-                              ],
-                            )
+                        'Histórico de serviços',
 
-                          : ListView.builder(
+                        style:
+                            TextStyle(
 
-                              physics:
-                                  const AlwaysScrollableScrollPhysics(),
+                          color:
+                              cores.onSurface,
 
-                              padding:
-                                  const EdgeInsets.all(
-                                16,
+                          fontSize: 25,
+
+                          fontWeight:
+                              FontWeight.w900,
+                        ),
+                      ),
+
+
+                      const SizedBox(
+                        height: 5,
+                      ),
+
+
+                      Text(
+
+                        historico.isEmpty
+                            ? 'Nenhum registro encontrado.'
+                            : historico.length == 1
+                                ? '1 registro encontrado.'
+                                : '${historico.length} registros encontrados.',
+
+                        style:
+                            TextStyle(
+
+                          color:
+                              cores.onSurface
+                                  .withValues(
+                                alpha: 0.58,
                               ),
 
-                              itemCount:
-                                  listaHistorico
-                                      .length,
-
-                              itemBuilder:
-                                  (
-                                    context,
-                                    index,
-                                  ) {
-
-                                final Agendamento
-                                    agendamento =
-                                    listaHistorico[
-                                        index
-                                    ];
+                          fontSize: 13,
+                        ),
+                      ),
 
 
-                                final String
-                                    nomesServicos =
-                                    agendamento
-                                        .servicos
-                                        .map(
-                                          (
-                                            servico,
-                                          ) =>
-                                              servico.nome,
-                                        )
-                                        .join(
-                                          ', ',
-                                        );
+                      const SizedBox(
+                        height: 24,
+                      ),
 
 
-                                final Pagamento?
-                                    pagamento =
-                                    buscarPagamento(
-                                  agendamento
-                                      .idAgendamento,
-                                );
+                      if (historico.isEmpty)
 
+                        estadoVazio()
 
-                                final bool pago =
-                                    pagamento != null
-                                    &&
-                                    pagamento
-                                            .statusPagamento ==
-                                        'PAGO';
+                      else
 
-
-                                return Card(
-
-                                  margin:
-                                      const EdgeInsets.only(
-                                    bottom: 16,
-                                  ),
-
-                                  child:
-                                      ListTile(
-
-                                    leading:
-                                        Icon(
-
-                                      agendamento.status ==
-                                              'Finalizado'
-
-                                          ? Icons
-                                              .check_circle
-
-                                          : Icons
-                                              .cancel,
-                                    ),
-
-                                    title:
-                                        Text(
-                                      '${agendamento.veiculo.marca} '
-                                      '${agendamento.veiculo.modelo}',
-                                    ),
-
-                                    subtitle:
-                                        Column(
-
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment
-                                              .start,
-
-                                      children: [
-
-                                        Text(
-                                          'Serviços: '
-                                          '$nomesServicos',
-                                        ),
-
-                                        Text(
-                                          'Data: '
-                                          '${agendamento.data}',
-                                        ),
-
-                                        Text(
-                                          'Horário: '
-                                          '${agendamento.horario}',
-                                        ),
-
-                                        Text(
-                                          'Status: '
-                                          '${agendamento.status}',
-                                        ),
-
-                                        Text(
-                                          'Valor: R\$ '
-                                          '${agendamento.valorTotal.toStringAsFixed(2)}',
-                                        ),
-
-                                        const SizedBox(
-                                          height: 8,
-                                        ),
-
-                                        Text(
-                                          textoPagamento(
-                                            agendamento,
-                                          ),
-                                          style:
-                                              const TextStyle(
-                                            fontWeight:
-                                                FontWeight.bold,
-                                          ),
-                                        ),
-
-
-                                        if (pago) ...[
-
-                                          Text(
-                                            'Forma: '
-                                            '${nomeFormaPagamento(
-                                              pagamento
-                                                  .formaPagamento,
-                                            )}',
-                                          ),
-
-                                          Text(
-                                            'Pago em: '
-                                            '${pagamento.dataPagamento}',
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-
-                                    trailing:
-                                        const Icon(
-                                      Icons
-                                          .chevron_right,
-                                    ),
-
-                                    onTap: () {
-
-                                      abrirDetalhes(
-                                        agendamento,
-                                      );
-                                    },
-                                  ),
-                                );
-                              },
-                            ),
+                        ...historico.map(
+                          cardHistorico,
+                        ),
+                    ],
+                  ),
                 ),
     );
   }

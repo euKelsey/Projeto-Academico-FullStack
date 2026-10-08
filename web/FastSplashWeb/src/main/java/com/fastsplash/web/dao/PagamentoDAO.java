@@ -6,7 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.fastsplash.web.db.Conexao;
 import com.fastsplash.web.model.Pagamento;
@@ -374,4 +376,45 @@ public class PagamentoDAO {
             conexao.close();
         }
     }
+
+    // =========================================
+    // LISTAR AGENDAMENTOS COM PAGAMENTO PAGO
+    // =========================================
+
+    public Set<Integer> listarAgendamentosPagos()
+            throws SQLException {
+
+        String sql = """
+                SELECT id_agendamento
+                FROM pagamento
+                WHERE status_pagamento = 'PAGO'
+                """;
+
+        Set<Integer> agendamentosPagos =
+                new HashSet<>();
+
+        try (
+            Connection conexao =
+                    Conexao.conectar();
+
+            PreparedStatement comando =
+                    conexao.prepareStatement(sql);
+
+            ResultSet resultado =
+                    comando.executeQuery()
+        ) {
+
+            while (resultado.next()) {
+
+                agendamentosPagos.add(
+                        resultado.getInt(
+                                "id_agendamento"
+                        )
+                );
+            }
+        }
+
+        return agendamentosPagos;
+    }
+
 }

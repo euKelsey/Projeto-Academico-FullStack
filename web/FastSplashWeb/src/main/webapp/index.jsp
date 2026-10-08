@@ -37,9 +37,6 @@
                     </span>
                 </div>
 
-                <span class="marca-subtitulo">
-                    CAR WASH
-                </span>
 
             </div>
 
@@ -90,10 +87,11 @@
                         </a>
 
                         <a
-                            class="botao-secundario"
+                            class="botao-cadastro-destaque"
                             href="${pageContext.request.contextPath}/cadastro.jsp"
                         >
-                            Cadastre-se
+                            <span class="botao-cadastro-icone">+</span>
+                            Criar minha conta
                         </a>
 
                     </div>
@@ -110,25 +108,6 @@
                             src="${pageContext.request.contextPath}/img/banners/banner-fast-splash.png"
                             alt="Fast Splash - lavagem automotiva"
                         >
-
-                        <div class="hero-banner-overlay">
-                            <span class="hero-banner-tag">
-                                Fast Splash
-                            </span>
-
-                            <strong>
-                                Velocidade no atendimento.
-                            </strong>
-
-                            <span>
-                                Impacto no resultado.
-                            </span>
-                        </div>
-
-                        <div class="hero-banner-selo">
-                            <span>FAST</span>
-                            <strong>+ SPLASH</strong>
-                        </div>
 
                     </div>
 
@@ -182,10 +161,6 @@
                             alt="Lavagem Expressa Fast Splash"
                         >
 
-                        <h3>
-                            Lavagem Expressa
-                        </h3>
-
                         <p class="descricao-servico">
                             Uma opção prática para manter
                             o veículo limpo no dia a dia.
@@ -228,10 +203,6 @@
                             alt="Lavagem Completa Fast Splash"
                         >
 
-                        <h3>
-                            Lavagem Completa
-                        </h3>
-
                         <p class="descricao-servico">
                             Um cuidado mais detalhado para
                             deixar o veículo renovado.
@@ -273,10 +244,6 @@
                             src="${pageContext.request.contextPath}/img/servicos/cuidados-especiais.png"
                             alt="Cuidados Especiais Fast Splash"
                         >
-
-                        <h3>
-                            Cuidados Especiais
-                        </h3>
 
                         <p class="descricao-servico">
                             Serviços adicionais para quem

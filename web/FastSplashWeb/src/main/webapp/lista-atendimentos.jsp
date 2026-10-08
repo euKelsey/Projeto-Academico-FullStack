@@ -3,6 +3,7 @@
     pageEncoding="UTF-8"%>
 
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="com.fastsplash.web.model.Atendimento" %>
 
@@ -10,6 +11,16 @@
     List<Atendimento> atendimentos =
             (List<Atendimento>) request.getAttribute(
                     "atendimentos"
+            );
+
+    Set<Integer> agendamentosPagos =
+            (Set<Integer>) request.getAttribute(
+                    "agendamentosPagos"
+            );
+
+    String erro =
+            (String) request.getAttribute(
+                    "erro"
             );
 
     DateTimeFormatter formatoDataHora =
@@ -120,6 +131,27 @@
             </section>
 
 
+            <%
+                if (
+                    erro != null
+                    && !erro.isBlank()
+                ) {
+            %>
+
+                <div
+                    class="estado-vazio"
+                    style="margin-bottom: 18px; border: 1px solid rgba(255, 138, 31, 0.45);"
+                >
+                    <strong>Não foi possível iniciar o atendimento.</strong>
+                    <br>
+                    <%= erro %>
+                </div>
+
+            <%
+                }
+            %>
+
+
             <section class="tabela-card">
 
                 <div class="tabela-responsiva">
@@ -152,6 +184,10 @@
                                     </th>
 
                                     <th>
+                                        Pagamento
+                                    </th>
+
+                                    <th>
                                         Início
                                     </th>
 
@@ -179,6 +215,12 @@
 
                                         String status =
                                                 atendimento.getStatus();
+
+                                        boolean pagamentoPago =
+                                                agendamentosPagos != null
+                                                && agendamentosPagos.contains(
+                                                        atendimento.getIdAgendamento()
+                                                );
 
                                         String classeStatus =
                                                 "status-aguardando";
@@ -243,6 +285,17 @@
                                             class="status-badge <%= classeStatus %>"
                                         >
                                             <%= status %>
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span
+                                            class="status-badge <%= pagamentoPago ? "status-finalizado" : "status-aguardando" %>"
+                                        >
+                                            <%= pagamentoPago ? "PAGO" : "PENDENTE" %>
                                         </span>
 
                                     </td>
@@ -329,6 +382,7 @@
                                                     "AGUARDANDO".equals(
                                                             status
                                                     )
+                                                    && pagamentoPago
                                                 ) {
                                             %>
 
@@ -357,6 +411,22 @@
                                                     </button>
 
                                                 </form>
+
+                                            <%
+                                                } else if (
+                                                    "AGUARDANDO".equals(
+                                                            status
+                                                    )
+                                                    && !pagamentoPago
+                                                ) {
+                                            %>
+
+                                                <span
+                                                    class="status-badge status-aguardando"
+                                                    title="O atendimento só pode começar após o pagamento."
+                                                >
+                                                    Aguardando pagamento
+                                                </span>
 
                                             <%
                                                 }

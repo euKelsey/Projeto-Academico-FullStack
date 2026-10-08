@@ -3,6 +3,7 @@ package com.fastsplash.web.api;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.Locale;
 
 import com.fastsplash.web.dao.ClienteDAO;
 import com.fastsplash.web.model.Cliente;
@@ -33,7 +34,7 @@ public class ClienteApiServlet extends HttpServlet {
 
                 response.setCharacterEncoding("UTF-8");
 
-                String nome = limpar(
+                String nome = padronizarTexto(
                                 request.getParameter("nome"));
 
                 String telefone = limpar(
@@ -202,6 +203,22 @@ public class ClienteApiServlet extends HttpServlet {
 
                 return valor;
         }
+
+        private String padronizarTexto(
+                        String valor) {
+
+                valor = limpar(
+                                valor);
+
+                if (valor == null) {
+
+                        return null;
+                }
+
+                return valor.toUpperCase(
+                                Locale.ROOT);
+        }
+
 
         private void responderErro(
                         HttpServletResponse response,

@@ -140,21 +140,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 28),
-
-                    const _MarcaFastSplash(),
-
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 24),
 
                     Text(
-                      'Seu carro limpo. Seu tempo preservado.',
+                      'Agende, acompanhe e cuide do seu carro.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: cores.onSurface.withValues(alpha: 0.60),
-                        fontSize: 14,
+                        color: cores.onSurface.withValues(alpha: 0.62),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
                         height: 1.4,
                       ),
                     ),
+
+                    const SizedBox(height: 30),
 
                     const SizedBox(height: 30),
 
@@ -219,19 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 18),
-
-                    Text(
-                      'Ainda não possui uma conta?\n'
-                      'Faça seu cadastro pelo site Fast Splash.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface
-                            .withValues(alpha: 0.55),
-                        fontSize: 12,
-                        height: 1.5,
-                      ),
-                    ),
+                    const SizedBox(height: 28),
 
                     const SizedBox(height: 22),
 
@@ -260,50 +247,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _MarcaFastSplash extends StatelessWidget {
-  const _MarcaFastSplash();
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = Theme.of(context).colorScheme;
-
-    return Column(
-      children: [
-        RichText(
-          textAlign: TextAlign.center,
-          text: TextSpan(
-            style: const TextStyle(
-              fontSize: 31,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.8,
-            ),
-            children: [
-              TextSpan(
-                text: 'Fast ',
-                style: TextStyle(color: cores.onSurface),
-              ),
-              TextSpan(
-                text: 'Splash',
-                style: TextStyle(color: cores.secondary),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 3),
-        const Text(
-          'CAR WASH',
-          style: TextStyle(
-            color: FastSplashTheme.laranja,
-            fontSize: 10,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 3.2,
-          ),
-        ),
-      ],
     );
   }
 }

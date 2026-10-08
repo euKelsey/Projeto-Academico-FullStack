@@ -452,12 +452,19 @@ public class AtendimentoDAO {
     ) throws SQLException {
 
         String sql = """
-                UPDATE atendimento
+                UPDATE atendimento at
+
+                INNER JOIN pagamento p
+                    ON p.id_agendamento =
+                       at.id_agendamento
+
                 SET
-                    status = 'EM_LAVAGEM',
-                    data_inicio = NOW()
-                WHERE id_atendimento = ?
-                  AND status = 'AGUARDANDO'
+                    at.status = 'EM_LAVAGEM',
+                    at.data_inicio = NOW()
+
+                WHERE at.id_atendimento = ?
+                  AND at.status = 'AGUARDANDO'
+                  AND p.status_pagamento = 'PAGO'
                 """;
 
 
@@ -482,7 +489,7 @@ public class AtendimentoDAO {
             if (linhasAlteradas == 0) {
 
                 throw new SQLException(
-                        "O atendimento precisa estar AGUARDANDO para iniciar a lavagem."
+                        "O atendimento só pode ser iniciado quando estiver AGUARDANDO e o pagamento estiver PAGO."
                 );
             }
         }
