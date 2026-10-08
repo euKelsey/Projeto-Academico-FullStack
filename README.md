@@ -618,6 +618,37 @@ EM_LAVAGEM  → Em andamento
 FINALIZADO  → Finalizado
 ```
 
+O início da lavagem depende do pagamento do agendamento.
+
+Enquanto o pagamento estiver com status `PENDENTE`:
+
+- o atendimento permanece `AGUARDANDO`;
+- o sistema Web informa que o atendimento está aguardando pagamento;
+- a ação **Iniciar** não é liberada na interface;
+- o backend também bloqueia tentativas de iniciar a lavagem sem pagamento.
+
+Após o pagamento passar para `PAGO`, a ação **Iniciar** é liberada e o atendimento pode mudar de `AGUARDANDO` para `EM_LAVAGEM`.
+
+Fluxo simplificado:
+
+```text
+Agendamento
+   ↓
+Pagamento PENDENTE
+   ↓
+Atendimento AGUARDANDO
+   ↓
+Cliente realiza pagamento
+   ↓
+Pagamento PAGO
+   ↓
+Atendimento pode iniciar
+   ↓
+EM_LAVAGEM
+   ↓
+FINALIZADO
+```
+
 Quando o atendimento é finalizado pelo sistema Web, o agendamento passa para:
 
 ```text
@@ -689,6 +720,10 @@ O cliente pode visualizar:
 - valor;
 - forma utilizada;
 - data do pagamento.
+
+O pagamento está integrado à regra de início do atendimento. Um atendimento só pode ser iniciado quando o pagamento relacionado ao agendamento estiver com status `PAGO`.
+
+Essa regra é validada no backend, evitando que a lavagem seja iniciada mesmo por uma tentativa direta de chamada da ação enquanto o pagamento ainda estiver pendente.
 
 Os pagamentos são **simulados** e utilizados exclusivamente para fins acadêmicos. Não existe integração com instituição financeira ou gateway de pagamento real.
 
