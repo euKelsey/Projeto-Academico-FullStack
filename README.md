@@ -19,7 +19,7 @@ O repositório reúne uma solução completa com:
 
 A aplicação mobile desenvolvida dentro do projeto utiliza o nome **Fast Splash**.
 
-> Projeto desenvolvido exclusivamente para fins acadêmicos, estudos e testes locais.
+> Projeto desenvolvido exclusivamente para fins acadêmicos, estudos, testes e demonstrações. A versão atual também possui ambiente online para acesso externo.
 
 ---
 
@@ -75,18 +75,40 @@ O sistema também possui controle de acesso de acordo com o nível do colaborado
 
 ## Arquitetura
 
-A comunicação principal do projeto segue o fluxo:
+O projeto pode ser executado em ambiente local ou em nuvem.
+
+### Arquitetura online
 
 ```text
-Flutter
-   ↓
+Aplicativo Flutter / Navegador
+            ↓
+     Render Web Service
+            ↓
+   Apache Tomcat + Java
+            ↓
+      API / Servlets
+            ↓
+           DAO
+            ↓
+          JDBC
+            ↓
+       Aiven MySQL
+```
+
+### Arquitetura local
+
+```text
+Flutter / Navegador
+        ↓
+Tomcat no computador
+        ↓
 API Java / Servlets
-   ↓
+        ↓
 DAO
-   ↓
+        ↓
 JDBC
-   ↓
-MySQL
+        ↓
+MySQL local
 ```
 
 O aplicativo Flutter **não acessa o banco de dados diretamente**.
@@ -115,6 +137,14 @@ Todas as operações passam pela API Java, responsável por autenticação, vali
 
 - MySQL
 - MySQL Workbench
+- Aiven MySQL
+
+### Infraestrutura e deploy
+
+- Docker
+- Render
+- Aiven
+- GitHub
 
 ### Ferramentas utilizadas no desenvolvimento
 
@@ -146,6 +176,7 @@ Projeto-Academico-FullStack/
 │
 ├── web/
 │   └── FastSplashWeb/
+│       ├── Dockerfile
 │       └── src/
 │           └── main/
 │               ├── java/
@@ -166,6 +197,11 @@ O banco utilizado pelo projeto é:
 ```text
 lava_rapido
 ```
+
+Atualmente o projeto possui duas possibilidades de banco:
+
+- **local**, executado no computador durante o desenvolvimento;
+- **online**, hospedado no **Aiven MySQL** para testes e demonstrações externas.
 
 A criação deve respeitar a seguinte ordem:
 
@@ -197,12 +233,66 @@ FASTSPLASH_DB_URL
 FASTSPLASH_DB_USER
 ```
 
-Valores padrão:
+Valores padrão para execução local:
 
 ```text
 FASTSPLASH_DB_URL=jdbc:mysql://localhost:3306/lava_rapido
 FASTSPLASH_DB_USER=root
 ```
+
+No ambiente online, as mesmas variáveis são configuradas diretamente no Render apontando para o banco hospedado no Aiven.
+
+A senha e demais credenciais privadas **não devem ser armazenadas no código-fonte nem versionadas no GitHub**.
+
+---
+
+## Ambiente online — Render e Aiven
+
+A versão atual do projeto também pode ser acessada pela internet sem depender do computador de desenvolvimento.
+
+### Render
+
+O sistema Web e o backend Java são publicados no **Render** por meio de um Web Service com Docker.
+
+O serviço utiliza o arquivo:
+
+```text
+web/FastSplashWeb/Dockerfile
+```
+
+O Dockerfile prepara o Apache Tomcat, copia a aplicação Web, compila os arquivos Java e inicia o servidor utilizando a porta disponibilizada pelo Render.
+
+A aplicação é publicada como aplicação `ROOT` do Tomcat. Por isso, no ambiente online não é utilizado `/FastSplashWeb` no endereço.
+
+URL pública atual:
+
+```text
+https://fast-splash.onrender.com
+```
+
+O deploy está conectado ao GitHub. Com o Auto-Deploy ativado, novos commits enviados para a branch configurada podem gerar um novo deploy automaticamente.
+
+### Aiven
+
+O banco MySQL utilizado no ambiente online está hospedado no **Aiven**.
+
+O Render acessa o Aiven por meio das variáveis de ambiente:
+
+```text
+FASTSPLASH_DB_URL
+FASTSPLASH_DB_USER
+FASTSPLASH_DB_PASSWORD
+```
+
+A conexão utiliza SSL.
+
+### Observação sobre planos gratuitos
+
+O ambiente online atual utiliza recursos gratuitos voltados a testes e projetos acadêmicos.
+
+O serviço gratuito do Render pode entrar em repouso após um período sem uso. Nesse caso, o primeiro acesso seguinte pode demorar alguns segundos enquanto o serviço é iniciado novamente.
+
+O projeto continua apropriado para estudos, demonstrações e portfólio, mas não foi configurado como ambiente de produção comercial.
 
 ---
 
@@ -233,6 +323,16 @@ http://localhost:8080/FastSplashWeb/
 
 O sistema Web utiliza login de colaborador.
 
+### Acesso online
+
+A versão publicada pode ser acessada diretamente em:
+
+```text
+https://fast-splash.onrender.com
+```
+
+Nesse modo, não é necessário iniciar Tomcat ou MySQL no computador local.
+
 ---
 
 ## Executando a aplicação Flutter
@@ -251,15 +351,29 @@ O endereço padrão utilizado pela aplicação é:
 http://10.0.2.2:8080/FastSplashWeb
 ```
 
-Para executar:
+Para executar localmente:
 
 ```bash
 flutter run
 ```
 
+### Executando com o backend online
+
+Para executar o aplicativo utilizando o backend hospedado no Render:
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://fast-splash.onrender.com
+```
+
+Nesse modo, o computador não precisa manter Tomcat ou MySQL em execução.
+
 ---
 
 ## Executando em celular físico
+
+Existem duas formas de executar o aplicativo em um celular físico.
+
+### Backend local
 
 O celular e o computador precisam estar conectados à mesma rede local.
 
@@ -288,6 +402,16 @@ Para o funcionamento correto:
 - o Tomcat deve estar iniciado;
 - celular e computador devem estar na mesma rede;
 - a porta utilizada pelo Tomcat deve estar acessível na rede local.
+
+### Backend online
+
+Para utilizar o Render, não é necessário que o celular e o computador estejam na mesma rede:
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://fast-splash.onrender.com
+```
+
+Nesse modo, basta que o celular possua acesso à internet.
 
 ---
 
@@ -457,30 +581,29 @@ static const String baseUrl = String.fromEnvironment(
 );
 ```
 
-Isso permite alternar entre emulador e dispositivo físico sem alterar manualmente o endereço no código.
+Isso permite alternar entre diferentes ambientes sem alterar manualmente o endereço no código.
 
 ```text
-Emulador Android
+Emulador Android com backend local
 → http://10.0.2.2:8080/FastSplashWeb
 
-Celular físico
+Celular físico com backend local
 → http://IP_DO_COMPUTADOR:8080/FastSplashWeb
+
+Backend online
+→ https://fast-splash.onrender.com
 ```
 
 ---
 
 ## Gerando APK Release
 
-Para gerar um APK para testes em celular físico:
+### APK utilizando o backend online
+
+Para gerar um APK que utilize o backend hospedado no Render:
 
 ```bash
-flutter build apk --release --dart-define=API_BASE_URL=http://IP_DO_PC:8080/FastSplashWeb
-```
-
-Exemplo:
-
-```bash
-flutter build apk --release --dart-define=API_BASE_URL=http://192.168.15.45:8080/FastSplashWeb
+flutter build apk --release --dart-define=API_BASE_URL=https://fast-splash.onrender.com
 ```
 
 O APK é gerado em:
@@ -491,7 +614,17 @@ build/app/outputs/flutter-apk/app-release.apk
 
 O endereço informado em `API_BASE_URL` fica configurado naquele APK.
 
-Se o IPv4 do computador mudar, será necessário gerar outro APK com o novo endereço.
+Esse APK pode utilizar o sistema pela internet sem depender do computador de desenvolvimento ligado.
+
+### APK utilizando backend local
+
+Também é possível gerar um APK apontando para o IP local do computador:
+
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=http://IP_DO_PC:8080/FastSplashWeb
+```
+
+Nesse caso, o computador precisa permanecer acessível na mesma rede e qualquer alteração do IPv4 pode exigir a geração de um novo APK.
 
 ---
 
@@ -509,7 +642,7 @@ Como os testes locais utilizam HTTP, a tag `<application>` também possui:
 android:usesCleartextTraffic="true"
 ```
 
-Essas configurações são utilizadas para comunicação com o Tomcat dentro da rede local.
+Essas configurações permitem os testes locais por HTTP. No ambiente online, a comunicação com o Render utiliza HTTPS.
 
 ---
 
@@ -801,6 +934,8 @@ git commit -m "Descrição da alteração"
 git push origin main
 ```
 
+No ambiente online atual, o Render está conectado ao repositório GitHub e pode iniciar automaticamente um novo deploy após alterações enviadas para a branch configurada.
+
 ---
 
 ## Arquivos que não devem ser versionados
@@ -848,6 +983,19 @@ git status
 
 para revisar alterações antes dos commits.
 
+A publicação online também foi validada nos seguintes cenários:
+
+```text
+Sistema Web no navegador do computador
+Sistema Web no navegador do celular
+Aplicativo Android em emulador
+APK Release em celular físico
+Leitura e escrita no banco Aiven MySQL
+Acesso ao APK e ao site com o computador de desenvolvimento desligado
+```
+
+Esses testes confirmaram que a versão publicada não depende do computador local para manter o backend e o banco disponíveis.
+
 ---
 
 ## Executando em outro computador
@@ -879,13 +1027,38 @@ Também será necessário preparar o ambiente local com:
 
 Depois da configuração, o sistema Web, backend, banco e aplicativo podem ser executados localmente.
 
+Também é possível utilizar diretamente o ambiente online já publicado, sem configurar Tomcat ou MySQL localmente, desde que o objetivo seja apenas acessar e testar o sistema.
+
 ---
 
 ## Ambiente de execução
 
-O projeto foi planejado para execução local durante estudos e apresentações acadêmicas.
+O projeto suporta execução local e execução online.
 
-### Emulador
+### Ambiente online
+
+```text
+Aplicativo Android / Navegador
+            ↓
+Internet
+            ↓
+Render
+Tomcat + Java + API
+            ↓
+Internet
+            ↓
+Aiven MySQL
+```
+
+Nesse modo:
+
+- o computador de desenvolvimento pode permanecer desligado;
+- o aplicativo pode ser utilizado fora da rede local;
+- o sistema Web pode ser acessado pelo navegador de outros dispositivos;
+- o banco permanece hospedado no Aiven;
+- o backend permanece hospedado no Render.
+
+### Emulador com backend local
 
 ```text
 Flutter no emulador
@@ -896,10 +1069,10 @@ Tomcat no computador
        ↓
 API Java
        ↓
-MySQL
+MySQL local
 ```
 
-### Celular físico
+### Celular físico com backend local
 
 ```text
 Celular
@@ -912,10 +1085,10 @@ Tomcat
    ↓
 API Java
    ↓
-MySQL
+MySQL local
 ```
 
-Não é necessário publicar o projeto em um servidor externo para os objetivos atuais.
+A execução local continua disponível para desenvolvimento e testes, enquanto o ambiente online facilita demonstrações acadêmicas e de portfólio.
 
 ---
 
@@ -940,6 +1113,10 @@ O projeto foi desenvolvido para estudo e aplicação prática de conceitos relac
 - sessões HTTP;
 - controle de acesso;
 - integração entre sistemas;
+- containers com Docker;
+- deploy em nuvem;
+- hospedagem de backend no Render;
+- banco MySQL remoto no Aiven;
 - Git;
 - GitHub.
 
