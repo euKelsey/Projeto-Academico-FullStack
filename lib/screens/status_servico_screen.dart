@@ -409,12 +409,6 @@ class _StatusServicoScreenState extends State<StatusServicoScreen> {
   Future<void> cancelarAgendamento(Agendamento agendamento) async {
     final int idAgendamento = agendamento.id;
 
-    if (idAgendamento == null) {
-      mostrarErro('Agendamento inválido.');
-
-      return;
-    }
-
     final bool? confirmar = await showDialog<bool>(
       context: context,
 
