@@ -1,142 +1,293 @@
-<%@ page language="java"
-    contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
-<%@ page import="java.util.List" %>
-<%@ page import="com.fastsplash.web.model.Servico" %>
+    <%@ page import="java.util.List" %>
+        <%@ page import="com.fastsplash.web.model.Servico" %>
 
-<%
-    List<Servico> servicos =
-        (List<Servico>) request.getAttribute("servicos");
-%>
+            <% List<Servico> servicos =
+                (List<Servico>) request.getAttribute(
+                    "servicos"
+                    );
+                    %>
 
-<!DOCTYPE html>
-<html>
+                    <!DOCTYPE html>
 
-<head>
+                    <html lang="pt-BR">
 
-    <meta charset="UTF-8">
+                    <head>
 
-    <title>
-        Serviços - Fast Splash
-    </title>
+                        <meta charset="UTF-8">
 
-</head>
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<body>
+                        <title>Serviços | Fast Splash</title>
 
-    <h1>Serviços Cadastrados</h1>
+                        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site.css">
+
+                    </head>
 
 
-    <a href="${pageContext.request.contextPath}/servico?acao=novo">
-        Cadastrar novo serviço
-    </a>
+                    <body class="pagina-interna">
 
 
-    <br><br>
+                        <header class="interna-topo">
+
+                            <div class="container interna-topo-conteudo">
+
+                                <div class="marca-cabecalho">
+
+                                    <div class="marca-nome">
+
+                                        <span class="marca-fast">
+                                            Fast
+                                        </span>
+
+                                        <span class="marca-splash">
+                                            Splash
+                                        </span>
+
+                                    </div>
+
+                                    <span class="marca-subtitulo">
+                                        GESTÃO
+                                    </span>
+
+                                </div>
 
 
-    <table border="1">
+                                <div class="interna-topo-acoes">
 
-        <tr>
+                                    <a class="interna-link" href="${pageContext.request.contextPath}/dashboard.jsp">
+                                        ← Dashboard
+                                    </a>
 
-            <th>ID</th>
-            <th>Nome</th>
-            <th>Descrição</th>
-            <th>Preço</th>
-            <th>Ações</th>
+                                    <a class="interna-link" href="${pageContext.request.contextPath}/logout">
+                                        Sair
+                                    </a>
 
-        </tr>
+                                </div>
 
+                            </div>
 
-        <%
-            if (servicos != null) {
-
-                for (Servico servico : servicos) {
-        %>
+                        </header>
 
 
-        <tr>
+                        <main class="interna-principal">
 
-            <td>
-                <%= servico.getIdServico() %>
-            </td>
+                            <div class="container">
 
 
-            <td>
-                <%= servico.getNome() %>
-            </td>
+                                <section class="interna-cabecalho">
+
+                                    <div>
+
+                                        <span class="destaque-pequeno">
+                                            Gestão de serviços
+                                        </span>
+
+                                        <h1>
+                                            Serviços cadastrados
+                                        </h1>
+
+                                        <p>
+                                            Consulte, edite ou cadastre os serviços
+                                            disponíveis no Fast Splash.
+                                        </p>
+
+                                    </div>
 
 
-            <td>
-                <%= servico.getDescricao() %>
-            </td>
+                                    <a class="botao-interno-principal"
+                                        href="${pageContext.request.contextPath}/servico?acao=novo">
+                                        + Novo serviço
+                                    </a>
+
+                                </section>
+
+                                <% String erro=request.getParameter("erro"); String
+                                    sucesso=request.getParameter("sucesso"); %>
 
 
-            <td>
-                R$ <%= String.format("%.2f", servico.getPreco()) %>
-            </td>
+                                    <% if ("servicoEmUso".equals(erro)) { %>
+
+                                        <div class="aviso-interno">
+
+                                            Este serviço não pode ser excluído porque
+                                            já está vinculado a um ou mais agendamentos.
+
+                                        </div>
+
+                                        <% } %>
 
 
-            <td>
+                                            <% if ("excluido".equals(sucesso)) { %>
+
+                                                <div class="mensagem-interna-sucesso">
+
+                                                    Serviço excluído com sucesso.
+
+                                                </div>
+
+                                                <% } %>
+
+                                                    <section class="tabela-card">
+
+                                                        <div class="tabela-responsiva">
 
 
-                <a href="${pageContext.request.contextPath}/servico?acao=editar&idServico=<%= servico.getIdServico() %>">
-                    Editar
-                </a>
+                                                            <% if ( servicos !=null && !servicos.isEmpty() ) { %>
 
 
-                <form
-                    action="${pageContext.request.contextPath}/servico"
-                    method="post"
-                    style="display:inline;"
-                >
+                                                                <table class="tabela-interna">
+
+                                                                    <thead>
+
+                                                                        <tr>
+
+                                                                            <th>
+                                                                                Serviço
+                                                                            </th>
+
+                                                                            <th>
+                                                                                Descrição
+                                                                            </th>
+
+                                                                            <th>
+                                                                                Preço
+                                                                            </th>
+
+                                                                            <th>
+                                                                                Ações
+                                                                            </th>
+
+                                                                        </tr>
+
+                                                                    </thead>
 
 
-                    <input
-                        type="hidden"
-                        name="acao"
-                        value="excluir"
-                    >
+                                                                    <tbody>
 
 
-                    <input
-                        type="hidden"
-                        name="idServico"
-                        value="<%= servico.getIdServico() %>"
-                    >
+                                                                        <% for ( Servico servico : servicos ) { %>
 
 
-                    <button type="submit">
-                        Excluir
-                    </button>
+                                                                            <tr>
+
+                                                                                <td>
+
+                                                                                    <div class="cliente-identidade">
+
+                                                                                        <span class="cliente-avatar">
+                                                                                            S
+                                                                                        </span>
+
+                                                                                        <div>
+
+                                                                                            <strong>
+                                                                                                <%= servico.getNome() %>
+                                                                                            </strong>
+
+                                                                                            <span>
+                                                                                                ID #<%=
+                                                                                                    servico.getIdServico()
+                                                                                                    %>
+                                                                                            </span>
+
+                                                                                        </div>
+
+                                                                                    </div>
+
+                                                                                </td>
 
 
-                </form>
+                                                                                <td>
+                                                                                    <% if ( servico.getDescricao()
+                                                                                        !=null &&
+                                                                                        !servico.getDescricao().isBlank()
+                                                                                        ) { %>
+
+                                                                                        <%= servico.getDescricao() %>
+
+                                                                                            <% } else { %>
+
+                                                                                                -
+
+                                                                                                <% } %>
+                                                                                </td>
 
 
-            </td>
-
-        </tr>
-
-
-        <%
-                }
-            }
-        %>
+                                                                                <td>
+                                                                                    R$ <%= String.format("%.2f",
+                                                                                        servico.getPreco()) %>
+                                                                                </td>
 
 
-    </table>
+                                                                                <td>
+
+                                                                                    <div class="acoes-tabela">
+
+                                                                                        <a class="acao-editar"
+                                                                                            href="${pageContext.request.contextPath}/servico?acao=editar&idServico=<%= servico.getIdServico() %>">
+                                                                                            Editar
+                                                                                        </a>
 
 
-    <br>
+                                                                                        <form
+                                                                                            action="${pageContext.request.contextPath}/servico"
+                                                                                            method="post">
+
+                                                                                            <input type="hidden"
+                                                                                                name="acao"
+                                                                                                value="excluir">
+
+                                                                                            <input type="hidden"
+                                                                                                name="idServico"
+                                                                                                value="<%= servico.getIdServico() %>">
+
+                                                                                            <button class="acao-excluir"
+                                                                                                type="submit"
+                                                                                                onclick="return confirm('Deseja realmente excluir este serviço?');">
+                                                                                                Excluir
+                                                                                            </button>
+
+                                                                                        </form>
+
+                                                                                    </div>
+
+                                                                                </td>
+
+                                                                            </tr>
 
 
-    <a href="${pageContext.request.contextPath}/index.jsp">
-        Voltar para o início
-    </a>
+                                                                            <% } %>
 
 
-</body>
+                                                                    </tbody>
 
-</html>
+                                                                </table>
+
+
+                                                                <% } else { %>
+
+
+                                                                    <div class="estado-vazio">
+
+                                                                        Nenhum serviço cadastrado.
+
+                                                                    </div>
+
+
+                                                                    <% } %>
+
+
+                                                        </div>
+
+                                                    </section>
+
+                            </div>
+
+                        </main>
+
+
+                    </body>
+
+                    </html>

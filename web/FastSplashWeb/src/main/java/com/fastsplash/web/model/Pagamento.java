@@ -1,6 +1,8 @@
 package com.fastsplash.web.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 public class Pagamento {
 
@@ -14,9 +16,14 @@ public class Pagamento {
     private String formaPagamento;
     private String statusPagamento;
 
-    // Campos usados para exibição no app
+
+    // Campos usados para exibição
+    private String clienteNome;
     private String veiculoDescricao;
     private String servicosDescricao;
+
+    private LocalDate dataAgendamento;
+    private LocalTime horarioAgendamento;
 
 
     public int getIdPagamento() {
@@ -85,6 +92,17 @@ public class Pagamento {
     }
 
 
+    public String getClienteNome() {
+        return clienteNome;
+    }
+
+    public void setClienteNome(
+            String clienteNome
+    ) {
+        this.clienteNome = clienteNome;
+    }
+
+
     public String getVeiculoDescricao() {
         return veiculoDescricao;
     }
@@ -104,5 +122,27 @@ public class Pagamento {
             String servicosDescricao
     ) {
         this.servicosDescricao = servicosDescricao;
+    }
+
+
+    public LocalDate getDataAgendamento() {
+        return dataAgendamento;
+    }
+
+    public void setDataAgendamento(
+            LocalDate dataAgendamento
+    ) {
+        this.dataAgendamento = dataAgendamento;
+    }
+
+
+    public LocalTime getHorarioAgendamento() {
+        return horarioAgendamento;
+    }
+
+    public void setHorarioAgendamento(
+            LocalTime horarioAgendamento
+    ) {
+        this.horarioAgendamento = horarioAgendamento;
     }
 }

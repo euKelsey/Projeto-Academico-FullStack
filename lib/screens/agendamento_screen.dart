@@ -1330,7 +1330,7 @@ class _AgendamentoScreenState
                           DropdownButtonFormField<
                               Veiculo>(
 
-                            value:
+                            initialValue:
                                 veiculoSelecionado,
 
                             isExpanded: true,

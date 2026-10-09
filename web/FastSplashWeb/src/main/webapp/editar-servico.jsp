@@ -6,119 +6,311 @@
 
 <%
     Servico servico =
-        (Servico) request.getAttribute("servico");
+            (Servico) request.getAttribute(
+                    "servico"
+            );
 %>
 
 <!DOCTYPE html>
-<html>
+
+<html lang="pt-BR">
 
 <head>
 
     <meta charset="UTF-8">
 
-    <title>
-        Editar Serviço - Fast Splash
-    </title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Editar serviço | Fast Splash</title>
+
+    <link
+        rel="stylesheet"
+        href="${pageContext.request.contextPath}/css/site.css"
+    >
 
 </head>
 
-<body>
 
-    <h1>Editar Serviço</h1>
-
-
-    <form
-        action="${pageContext.request.contextPath}/servico"
-        method="post"
-    >
+<body class="pagina-interna">
 
 
-        <input
-            type="hidden"
-            name="acao"
-            value="atualizar"
-        >
+    <header class="interna-topo">
+
+        <div class="container interna-topo-conteudo">
+
+            <div class="marca-cabecalho">
+
+                <div class="marca-nome">
+
+                    <span class="marca-fast">
+                        Fast
+                    </span>
+
+                    <span class="marca-splash">
+                        Splash
+                    </span>
+
+                </div>
+
+                <span class="marca-subtitulo">
+                    GESTÃO
+                </span>
+
+            </div>
 
 
-        <input
-            type="hidden"
-            name="idServico"
-            value="<%= servico.getIdServico() %>"
-        >
+            <div class="interna-topo-acoes">
+
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/servico"
+                >
+                    ← Serviços
+                </a>
+
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/dashboard.jsp"
+                >
+                    Dashboard
+                </a>
+
+            </div>
+
+        </div>
+
+    </header>
 
 
-        <label for="nome">
-            Nome:
-        </label>
+    <main class="interna-principal">
 
-        <br>
+        <div class="container">
 
 
-        <input
-            type="text"
-            id="nome"
-            name="nome"
-            value="<%= servico.getNome() %>"
-            required
-        >
+            <section class="interna-cabecalho">
+
+                <div>
+
+                    <span class="destaque-pequeno">
+                        Gestão de serviços
+                    </span>
+
+                    <h1>
+                        Editar serviço
+                    </h1>
+
+                    <p>
+                        Atualize os dados do serviço selecionado.
+                    </p>
+
+                </div>
+
+            </section>
 
 
-        <br><br>
+            <section class="form-interno-card">
+
+                <div class="form-interno-topo">
+
+                    <h2>
+                        Dados do serviço
+                    </h2>
+
+                    <p>
+                        Altere os campos necessários e salve
+                        as modificações.
+                    </p>
+
+                </div>
 
 
-        <label for="descricao">
-            Descrição:
-        </label>
-
-        <br>
-
-
-        <textarea
-            id="descricao"
-            name="descricao"
-            rows="4"
-            cols="40"
-        ><%= servico.getDescricao() %></textarea>
+                <form
+                    class="form-interno"
+                    action="${pageContext.request.contextPath}/servico"
+                    method="post"
+                >
 
 
-        <br><br>
+                    <input
+                        type="hidden"
+                        name="acao"
+                        value="atualizar"
+                    >
 
 
-        <label for="preco">
-            Preço:
-        </label>
-
-        <br>
-
-
-        <input
-            type="number"
-            id="preco"
-            name="preco"
-            min="0"
-            step="0.01"
-            value="<%= servico.getPreco() %>"
-            required
-        >
+                    <input
+                        type="hidden"
+                        name="idServico"
+                        value="<%= servico.getIdServico() %>"
+                    >
 
 
-        <br><br>
+                    <div class="campo-interno campo-interno-largo">
+
+                        <label for="nome">
+                            Nome do serviço
+                        </label>
+
+                        <input
+                            type="text"
+                            id="nome"
+                            name="nome"
+                            maxlength="100"
+                            value="<%= servico.getNome() %>"
+                            required
+                        >
+
+                    </div>
 
 
-        <button type="submit">
-            Salvar Alterações
-        </button>
+                    <div class="campo-interno campo-interno-largo">
+
+                        <label for="descricao">
+                            Descrição
+                        </label>
+
+                        <textarea
+                            id="descricao"
+                            name="descricao"
+                            rows="5"
+                            maxlength="255"
+                        ><%= servico.getDescricao() != null ? servico.getDescricao() : "" %></textarea>
+
+                    </div>
 
 
-    </form>
+                    <div class="campo-interno">
+
+                        <label for="precoExibicao">
+                            Preço
+                        </label>
+
+                        <input
+                            type="text"
+                            id="precoExibicao"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            required
+                        >
+
+                        <input
+                            type="hidden"
+                            id="preco"
+                            name="preco"
+                            value="<%= servico.getPreco() %>"
+                        >
+
+                    </div>
 
 
-    <br>
+                    <p class="form-observacao">
+                        A alteração do preço será aplicada apenas
+                        aos novos agendamentos.
+                    </p>
 
 
-    <a href="${pageContext.request.contextPath}/servico">
-        Voltar para a lista
-    </a>
+                    <div class="form-interno-acoes">
+
+                        <a
+                            class="botao-interno-secundario"
+                            href="${pageContext.request.contextPath}/servico"
+                        >
+                            Cancelar
+                        </a>
+
+                        <button
+                            class="botao-interno-principal"
+                            type="submit"
+                        >
+                            Salvar alterações
+                        </button>
+
+                    </div>
+
+
+                </form>
+
+            </section>
+
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        const precoExibicao =
+            document.getElementById(
+                "precoExibicao"
+            );
+
+        const preco =
+            document.getElementById(
+                "preco"
+            );
+
+
+        function atualizarPrecoExibicao(
+            valor
+        ) {
+
+            precoExibicao.value =
+                Number(valor).toLocaleString(
+                    "pt-BR",
+                    {
+                        style: "currency",
+                        currency: "BRL"
+                    }
+                );
+        }
+
+
+        atualizarPrecoExibicao(
+            preco.value
+        );
+
+
+        precoExibicao.addEventListener(
+            "input",
+            function () {
+
+                let numeros =
+                    precoExibicao.value.replace(
+                        /\D/g,
+                        ""
+                    );
+
+
+                if (numeros === "") {
+
+                    precoExibicao.value = "";
+
+                    preco.value = "";
+
+                    return;
+                }
+
+
+                const valor =
+                    Number(numeros) / 100;
+
+
+                atualizarPrecoExibicao(
+                    valor
+                );
+
+
+                preco.value =
+                    valor.toFixed(2);
+
+            }
+        );
+
+    </script>
 
 
 </body>

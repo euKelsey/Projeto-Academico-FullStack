@@ -4,193 +4,286 @@
 
 <%
     String erro =
-        (String)
-            request.getAttribute(
-                    "erro"
-            );
+            (String)
+                request.getAttribute(
+                        "erro"
+                );
 %>
 
 <!DOCTYPE html>
 
-<html>
+<html lang="pt-BR">
 
 <head>
 
     <meta charset="UTF-8">
 
-    <title>
-        Cadastrar Funcionário - Fast Splash
-    </title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Novo colaborador | Fast Splash</title>
+
+    <link
+        rel="stylesheet"
+        href="${pageContext.request.contextPath}/css/site.css"
+    >
 
 </head>
 
-<body>
 
+<body class="pagina-interna">
 
-    <h1>
-        Cadastrar Funcionário
-    </h1>
 
+    <header class="interna-topo">
 
-    <% if (erro != null) { %>
+        <div class="container interna-topo-conteudo">
 
-        <p>
-            <strong>
-                <%= erro %>
-            </strong>
-        </p>
+            <div class="marca-cabecalho">
 
-    <% } %>
+                <div class="marca-nome">
 
+                    <span class="marca-fast">
+                        Fast
+                    </span>
 
-    <form
-        action="${pageContext.request.contextPath}/colaborador"
-        method="post"
-    >
+                    <span class="marca-splash">
+                        Splash
+                    </span>
 
+                </div>
 
-        <label for="nome">
-            Nome:
-        </label>
+                <span class="marca-subtitulo">
+                    GESTÃO
+                </span>
 
-        <br>
+            </div>
 
 
-        <input
-            type="text"
-            id="nome"
-            name="nome"
-            value="${param.nome}"
-            required
-        >
+            <div class="interna-topo-acoes">
 
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/colaborador"
+                >
+                    ← Colaboradores
+                </a>
 
-        <br><br>
+                <a
+                    class="interna-link"
+                    href="${pageContext.request.contextPath}/dashboard.jsp"
+                >
+                    Dashboard
+                </a>
 
+            </div>
 
-        <label for="cargo">
-            Cargo:
-        </label>
+        </div>
 
-        <br>
+    </header>
 
 
-        <input
-            type="text"
-            id="cargo"
-            name="cargo"
-            value="${param.cargo}"
-            required
-        >
+    <main class="interna-principal">
 
+        <div class="container">
 
-        <br><br>
 
+            <section class="interna-cabecalho">
 
-        <label for="nivelAcesso">
-            Nível de acesso:
-        </label>
+                <div>
 
-        <br>
+                    <span class="destaque-pequeno">
+                        Gestão de equipe
+                    </span>
 
+                    <h1>
+                        Cadastrar colaborador
+                    </h1>
 
-        <select
-            id="nivelAcesso"
-            name="nivelAcesso"
-            required
-        >
+                    <p>
+                        Inclua um novo colaborador
+                        na equipe do Fast Splash.
+                    </p>
 
-            <option value="">
-                Selecione
-            </option>
+                </div>
 
+            </section>
 
-            <option value="ADMINISTRADOR">
-                Administrador
-            </option>
 
+            <section class="form-interno-card">
 
-            <option value="ATENDENTE">
-                Atendente
-            </option>
+                <div class="form-interno-topo">
 
+                    <h2>
+                        Dados do colaborador
+                    </h2>
 
-            <option value="OPERACIONAL">
-                Operacional
-            </option>
+                    <p>
+                        Preencha os dados e defina
+                        o nível de acesso ao sistema.
+                    </p>
 
+                </div>
 
-        </select>
 
+                <%
+                    if (erro != null) {
+                %>
 
-        <br><br>
+                    <div class="mensagem-interna-erro">
+                        <%= erro %>
+                    </div>
 
+                <%
+                    }
+                %>
 
-        <label for="email">
-            E-mail:
-        </label>
 
-        <br>
+                <form
+                    class="form-interno"
+                    action="${pageContext.request.contextPath}/colaborador"
+                    method="post"
+                >
 
 
-        <input
-            type="email"
-            id="email"
-            name="email"
-            value="${param.email}"
-        >
+                    <div class="campo-interno campo-interno-largo">
 
+                        <label for="nome">
+                            Nome completo
+                        </label>
 
-        <br>
+                        <input
+                            type="text"
+                            id="nome"
+                            name="nome"
+                            value="${param.nome}"
+                            maxlength="100"
+                            required
+                        >
 
-        <small>
-            Obrigatório para Administrador e Atendente.
-            Opcional para Operacional.
-        </small>
+                    </div>
 
 
-        <br><br>
+                    <div class="campo-interno">
 
+                        <label for="cargo">
+                            Cargo
+                        </label>
 
-        <label for="senha">
-            Senha:
-        </label>
+                        <input
+                            type="text"
+                            id="cargo"
+                            name="cargo"
+                            value="${param.cargo}"
+                            maxlength="100"
+                            required
+                        >
 
-        <br>
+                    </div>
 
 
-        <input
-            type="password"
-            id="senha"
-            name="senha"
-        >
+                    <div class="campo-interno">
 
+                        <label for="nivelAcesso">
+                            Nível de acesso
+                        </label>
 
-        <br>
+                        <select
+                            id="nivelAcesso"
+                            name="nivelAcesso"
+                            required
+                        >
 
-        <small>
-            Obrigatória para Administrador e Atendente.
-            Opcional para Operacional.
-        </small>
+                            <option value="">
+                                Selecione
+                            </option>
 
+                            <option value="ADMINISTRADOR">
+                                Administrador
+                            </option>
 
-        <br><br>
+                            <option value="ATENDENTE">
+                                Atendente
+                            </option>
 
+                            <option value="OPERACIONAL">
+                                Operacional
+                            </option>
 
-        <button type="submit">
-            Cadastrar Funcionário
-        </button>
+                        </select>
 
+                    </div>
 
-    </form>
 
+                    <div class="campo-interno campo-interno-largo">
 
-    <br>
+                        <label for="email">
+                            E-mail
+                        </label>
 
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value="${param.email}"
+                            placeholder="colaborador@email.com"
+                        >
 
-    <a href="${pageContext.request.contextPath}/colaborador">
-        Voltar para a lista
-    </a>
+                    </div>
+
+
+                    <div class="campo-interno campo-interno-largo">
+
+                        <label for="senha">
+                            Senha
+                        </label>
+
+                        <input
+                            type="password"
+                            id="senha"
+                            name="senha"
+                            placeholder="Digite a senha de acesso"
+                            autocomplete="new-password"
+                        >
+
+                    </div>
+
+
+                    <p class="form-observacao">
+                        Administradores e atendentes precisam
+                        de e-mail e senha para acessar o sistema.
+                        O nível Operacional não utiliza o painel Web.
+                    </p>
+
+
+                    <div class="form-interno-acoes">
+
+                        <a
+                            class="botao-interno-secundario"
+                            href="${pageContext.request.contextPath}/colaborador"
+                        >
+                            Cancelar
+                        </a>
+
+                        <button
+                            class="botao-interno-principal"
+                            type="submit"
+                        >
+                            Cadastrar colaborador
+                        </button>
+
+                    </div>
+
+
+                </form>
+
+            </section>
+
+
+        </div>
+
+    </main>
 
 
 </body>
