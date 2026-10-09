@@ -37,3 +37,20 @@ jobs:
 
       - name: Analisar código Flutter
         run: flutter analyze
+
+
+  web-java:
+
+    name: Validar Web Java
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - name: Baixar código do repositório
+        uses: actions/checkout@v4
+
+
+      - name: Construir aplicação Web
+        run: docker build -t fast-splash-web ./web/FastSplashWeb
