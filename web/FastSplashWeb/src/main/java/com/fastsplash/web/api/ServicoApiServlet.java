@@ -52,7 +52,7 @@ public class ServicoApiServlet
         try {
 
             List<Servico> servicos =
-                    servicoDAO.listarTodos();
+                    servicoDAO.listarAtivos();
 
 
             StringBuilder json =

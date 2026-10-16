@@ -329,7 +329,7 @@ public class AgendamentoServlet extends HttpServlet {
 
             request.setAttribute(
                     "servicos",
-                    servicoDAO.listarTodos()
+                    servicoDAO.listarAtivos()
             );
 
 

@@ -6,6 +6,7 @@ public class Servico {
     private String nome;
     private String descricao;
     private double preco;
+    private boolean ativo;
 
     public Servico() {
     }
@@ -14,13 +15,15 @@ public class Servico {
             int idServico,
             String nome,
             String descricao,
-            double preco
+            double preco,
+            boolean ativo
     ) {
 
         this.idServico = idServico;
         this.nome = nome;
         this.descricao = descricao;
         this.preco = preco;
+        this.ativo = ativo;
     }
 
     public int getIdServico() {
@@ -53,5 +56,13 @@ public class Servico {
 
     public void setPreco(double preco) {
         this.preco = preco;
+    }
+
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(boolean ativo) {
+        this.ativo = ativo;
     }
 }

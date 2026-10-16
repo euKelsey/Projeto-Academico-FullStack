@@ -18,8 +18,8 @@ public class ServicoDAO {
 
                 String sql = """
                                 INSERT INTO servico
-                                (nome, descricao, preco)
-                                VALUES (?, ?, ?)
+                                (nome, descricao, preco, ativo)
+                                VALUES (?, ?, ?, ?)
                                 """;
 
                 try (
@@ -41,6 +41,10 @@ public class ServicoDAO {
                                         3,
                                         servico.getPreco());
 
+                        comando.setBoolean(
+                                        4,
+                                        servico.isAtivo());
+
                         comando.executeUpdate();
 
                         try (
@@ -61,6 +65,34 @@ public class ServicoDAO {
                 String sql = """
                                 SELECT *
                                 FROM servico
+                                ORDER BY id_servico
+                                """;
+
+                List<Servico> servicos = new ArrayList<>();
+
+                try (
+                                Connection conexao = Conexao.conectar();
+                                PreparedStatement comando = conexao.prepareStatement(sql);
+                                ResultSet resultado = comando.executeQuery()) {
+
+                        while (resultado.next()) {
+
+                                Servico servico = criarServico(resultado);
+
+                                servicos.add(servico);
+                        }
+                }
+
+                return servicos;
+        }
+
+        // READ - LISTAR ATIVOS
+        public List<Servico> listarAtivos() throws SQLException {
+
+                String sql = """
+                                SELECT *
+                                FROM servico
+                                WHERE ativo = TRUE
                                 ORDER BY id_servico
                                 """;
 
@@ -122,7 +154,8 @@ public class ServicoDAO {
                                 UPDATE servico
                                 SET nome = ?,
                                     descricao = ?,
-                                    preco = ?
+                                    preco = ?,
+                                    ativo = ?
                                 WHERE id_servico = ?
                                 """;
 
@@ -142,8 +175,12 @@ public class ServicoDAO {
                                         3,
                                         servico.getPreco());
 
-                        comando.setInt(
+                        comando.setBoolean(
                                         4,
+                                        servico.isAtivo());
+
+                        comando.setInt(
+                                        5,
                                         servico.getIdServico());
 
                         comando.executeUpdate();
@@ -174,6 +211,33 @@ public class ServicoDAO {
 
                                 return resultado.next();
                         }
+                }
+        }
+
+        // ATIVAR / INATIVAR SERVIÇO
+        public void alterarStatus(
+                        int idServico,
+                        boolean ativo) throws SQLException {
+
+                String sql = """
+                                                UPDATE servico
+                                                SET ativo = ?
+                                                WHERE id_servico = ?
+                                """;
+
+                try (
+                                Connection conexao = Conexao.conectar();
+                                PreparedStatement comando = conexao.prepareStatement(sql)) {
+
+                        comando.setBoolean(
+                                        1,
+                                        ativo);
+
+                        comando.setInt(
+                                        2,
+                                        idServico);
+
+                        comando.executeUpdate();
                 }
         }
 
@@ -219,6 +283,10 @@ public class ServicoDAO {
                 servico.setPreco(
                                 resultado.getDouble(
                                                 "preco"));
+
+                servico.setAtivo(
+                                resultado.getBoolean(
+                                                "ativo"));
 
                 return servico;
         }

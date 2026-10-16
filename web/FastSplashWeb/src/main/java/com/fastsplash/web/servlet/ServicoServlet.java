@@ -2,6 +2,9 @@ package com.fastsplash.web.servlet;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.fastsplash.web.dao.ServicoDAO;
 import com.fastsplash.web.model.Servico;
@@ -26,7 +29,8 @@ public class ServicoServlet extends HttpServlet {
         @Override
         protected void doGet(
                         HttpServletRequest request,
-                        HttpServletResponse response) throws ServletException, IOException {
+                        HttpServletResponse response)
+                        throws ServletException, IOException {
 
                 String acao = request.getParameter("acao");
 
@@ -50,8 +54,9 @@ public class ServicoServlet extends HttpServlet {
 
                         try {
 
-                                Servico servico = servicoDAO.buscarPorId(
-                                                idServico);
+                                Servico servico =
+                                                servicoDAO.buscarPorId(
+                                                                idServico);
 
                                 if (servico == null) {
 
@@ -67,7 +72,8 @@ public class ServicoServlet extends HttpServlet {
                                                 servico);
 
                                 request.getRequestDispatcher(
-                                                "/editar-servico.jsp").forward(
+                                                "/editar-servico.jsp")
+                                                .forward(
                                                                 request,
                                                                 response);
 
@@ -84,12 +90,34 @@ public class ServicoServlet extends HttpServlet {
                 // LISTAR SERVIÇOS
                 try {
 
+                        List<Servico> servicos =
+                                        servicoDAO.listarTodos();
+
+                        Map<Integer, Boolean> servicosEmUso =
+                                        new HashMap<>();
+
+                        for (Servico servico : servicos) {
+
+                                boolean emUso =
+                                                servicoDAO.possuiAgendamentos(
+                                                                servico.getIdServico());
+
+                                servicosEmUso.put(
+                                                servico.getIdServico(),
+                                                emUso);
+                        }
+
                         request.setAttribute(
                                         "servicos",
-                                        servicoDAO.listarTodos());
+                                        servicos);
+
+                        request.setAttribute(
+                                        "servicosEmUso",
+                                        servicosEmUso);
 
                         request.getRequestDispatcher(
-                                        "/lista-servicos.jsp").forward(
+                                        "/lista-servicos.jsp")
+                                        .forward(
                                                         request,
                                                         response);
 
@@ -108,32 +136,43 @@ public class ServicoServlet extends HttpServlet {
         @Override
         protected void doPost(
                         HttpServletRequest request,
-                        HttpServletResponse response) throws ServletException, IOException {
+                        HttpServletResponse response)
+                        throws ServletException, IOException {
 
                 request.setCharacterEncoding("UTF-8");
 
-                String acao = request.getParameter("acao");
+                String acao =
+                                request.getParameter("acao");
 
+                // =========================================
                 // ATUALIZAR SERVIÇO
+                // =========================================
+
                 if ("atualizar".equals(acao)) {
 
-                        int idServico = Integer.parseInt(
+                        int idServico =
+                                        Integer.parseInt(
+                                                        request.getParameter(
+                                                                        "idServico"));
+
+                        String nome =
                                         request.getParameter(
-                                                        "idServico"));
+                                                        "nome");
 
-                        String nome = request.getParameter("nome");
-
-                        String descricao = request.getParameter(
-                                        "descricao");
-
-                        double preco = Double.parseDouble(
+                        String descricao =
                                         request.getParameter(
-                                                        "preco"));
+                                                        "descricao");
+
+                        double preco =
+                                        Double.parseDouble(
+                                                        request.getParameter(
+                                                                        "preco"));
 
                         try {
 
-                                Servico servico = servicoDAO.buscarPorId(
-                                                idServico);
+                                Servico servico =
+                                                servicoDAO.buscarPorId(
+                                                                idServico);
 
                                 if (servico == null) {
 
@@ -170,12 +209,78 @@ public class ServicoServlet extends HttpServlet {
                         return;
                 }
 
+                // =========================================
+                // INATIVAR SERVIÇO
+                // =========================================
+
+                if ("inativar".equals(acao)) {
+
+                        int idServico =
+                                        Integer.parseInt(
+                                                        request.getParameter(
+                                                                        "idServico"));
+
+                        try {
+
+                                servicoDAO.alterarStatus(
+                                                idServico,
+                                                false);
+
+                                response.sendRedirect(
+                                                request.getContextPath()
+                                                                + "/servico?sucesso=inativado");
+
+                        } catch (SQLException e) {
+
+                                throw new ServletException(
+                                                "Erro ao inativar serviço.",
+                                                e);
+                        }
+
+                        return;
+                }
+
+                // =========================================
+                // ATIVAR SERVIÇO
+                // =========================================
+
+                if ("ativar".equals(acao)) {
+
+                        int idServico =
+                                        Integer.parseInt(
+                                                        request.getParameter(
+                                                                        "idServico"));
+
+                        try {
+
+                                servicoDAO.alterarStatus(
+                                                idServico,
+                                                true);
+
+                                response.sendRedirect(
+                                                request.getContextPath()
+                                                                + "/servico?sucesso=ativado");
+
+                        } catch (SQLException e) {
+
+                                throw new ServletException(
+                                                "Erro ao ativar serviço.",
+                                                e);
+                        }
+
+                        return;
+                }
+
+                // =========================================
                 // EXCLUIR SERVIÇO
+                // =========================================
+
                 if ("excluir".equals(acao)) {
 
-                        int idServico = Integer.parseInt(
-                                        request.getParameter(
-                                                        "idServico"));
+                        int idServico =
+                                        Integer.parseInt(
+                                                        request.getParameter(
+                                                                        "idServico"));
 
                         try {
 
@@ -206,17 +311,25 @@ public class ServicoServlet extends HttpServlet {
                         return;
                 }
 
+                // =========================================
                 // CADASTRAR SERVIÇO
-                String nome = request.getParameter("nome");
+                // =========================================
 
-                String descricao = request.getParameter(
-                                "descricao");
-
-                double preco = Double.parseDouble(
+                String nome =
                                 request.getParameter(
-                                                "preco"));
+                                                "nome");
 
-                Servico servico = new Servico();
+                String descricao =
+                                request.getParameter(
+                                                "descricao");
+
+                double preco =
+                                Double.parseDouble(
+                                                request.getParameter(
+                                                                "preco"));
+
+                Servico servico =
+                                new Servico();
 
                 servico.setNome(
                                 nome);
@@ -226,6 +339,9 @@ public class ServicoServlet extends HttpServlet {
 
                 servico.setPreco(
                                 preco);
+
+                servico.setAtivo(
+                                true);
 
                 try {
 
