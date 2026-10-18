@@ -1,0 +1,62 @@
+/* =====================================================
+   ÁREA INTERNA - PAGAMENTOS
+===================================================== */
+
+.status-pagamento-pendente {
+    color: #ffd39f;
+
+    background-color:
+        rgba(255, 138, 31, 0.08);
+
+    border-color:
+        rgba(255, 138, 31, 0.18);
+}
+
+
+.status-pagamento-pago {
+    color: #a8efbf;
+
+    background-color:
+        rgba(68, 205, 112, 0.08);
+
+    border-color:
+        rgba(68, 205, 112, 0.17);
+}
+
+
+.status-pagamento-cancelado {
+    color: #ffaaaa;
+
+    background-color:
+        rgba(255, 82, 82, 0.07);
+
+    border-color:
+        rgba(255, 82, 82, 0.16);
+}
+
+
+.pagamento-forma {
+    color: var(--cinza-claro);
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+
+.pagamento-data {
+    color: var(--cinza-claro);
+
+    font-size: 13px;
+
+    white-space: nowrap;
+}
+
+
+.pagamento-pendente-texto {
+    color: var(--cinza);
+
+    font-size: 12px;
+
+    white-space: nowrap;
+}

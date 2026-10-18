@@ -1,0 +1,180 @@
+/* =====================================================
+   ÁREA INTERNA - ATENDIMENTOS
+===================================================== */
+
+.atendimento-identidade {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.atendimento-identidade strong {
+    color: var(--branco);
+    font-size: 14px;
+}
+
+.atendimento-identidade span {
+    color: var(--cinza);
+    font-size: 12px;
+}
+
+.status-aguardando {
+    color: #ffd39f;
+    background-color: rgba(255, 138, 31, .08);
+    border-color: rgba(255, 138, 31, .18);
+}
+
+.status-em-lavagem {
+    color: var(--ciano-claro);
+    background-color: rgba(24, 200, 255, .08);
+    border-color: rgba(24, 200, 255, .18);
+}
+
+.status-finalizado {
+    color: #a8efbf;
+    background-color: rgba(68, 205, 112, .08);
+    border-color: rgba(68, 205, 112, .17);
+}
+
+.atendimento-data {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    white-space: nowrap;
+}
+
+.atendimento-data strong {
+    color: var(--branco);
+    font-size: 13px;
+}
+
+.atendimento-data span {
+    color: var(--cinza);
+    font-size: 11px;
+}
+
+.acao-detalhes,
+.acao-iniciar,
+.acao-finalizar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 11px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.acao-detalhes {
+    color: var(--cinza-claro);
+    border: 1px solid rgba(255, 255, 255, .09);
+    background-color: rgba(255, 255, 255, .03);
+}
+
+.acao-iniciar {
+    color: var(--ciano);
+    border: 1px solid rgba(24, 200, 255, .20);
+    background-color: rgba(24, 200, 255, .06);
+}
+
+.acao-finalizar {
+    color: #a8efbf;
+    border: 1px solid rgba(68, 205, 112, .20);
+    background-color: rgba(68, 205, 112, .06);
+}
+
+.atendimento-detalhes-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.detalhe-card {
+    padding: 18px;
+    border-radius: 13px;
+    border: 1px solid rgba(255, 255, 255, .07);
+    background-color: rgba(9, 14, 20, .36);
+}
+
+.detalhe-card-largo {
+    grid-column: 1/-1;
+}
+
+.detalhe-card span {
+    display: block;
+    color: var(--cinza);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+}
+
+.detalhe-card strong {
+    color: var(--branco);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.atendimento-fluxo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+}
+
+.fluxo-etapa {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 11px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, .07);
+    color: var(--cinza);
+    background-color: rgba(255, 255, 255, .025);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.fluxo-etapa.ativa {
+    color: var(--ciano);
+    border-color: rgba(24, 200, 255, .25);
+    background-color: rgba(24, 200, 255, .06);
+}
+
+.fluxo-seta {
+    color: var(--cinza);
+}
+
+@media (max-width:760px) {
+    .atendimento-detalhes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detalhe-card-largo {
+        grid-column: auto;
+    }
+}
+
+.mensagem-interna-sucesso {
+    padding:
+        13px 15px;
+
+    margin-bottom: 22px;
+
+    border-radius: 10px;
+
+    border:
+        1px solid rgba(68, 205, 112, 0.20);
+
+    background-color:
+        rgba(68, 205, 112, 0.07);
+
+    color: #a8efbf;
+
+    font-size: 13px;
+}

@@ -1,0 +1,47 @@
+/* =====================================================
+   SERVIÇOS
+===================================================== */
+
+
+/* =====================================================
+   SERVIÇOS INATIVOS
+===================================================== */
+
+.tabela-interna tbody tr.servico-inativo td {
+    background-color: rgba(0, 0, 0, 0.32);
+    color: #66717f;
+}
+
+.tabela-interna tbody tr.servico-inativo:hover td {
+    background-color: rgba(0, 0, 0, 0.32);
+}
+
+.servico-inativo .cliente-identidade strong {
+    color: #78838f;
+}
+
+.servico-inativo .cliente-identidade span {
+    color: #59636e;
+}
+
+.servico-inativo .cliente-avatar {
+    filter: grayscale(1);
+    opacity: 0.45;
+}
+
+.servico-inativo td {
+    color: #66717f;
+}
+
+.servico-inativo .acoes-tabela {
+    opacity: 1;
+}
+
+.servico-inativo .acoes-tabela a,
+.servico-inativo .acoes-tabela button {
+    opacity: 1;
+}
+
+.servico-inativo .acao-editar {
+    color: var(--ciano);
+}

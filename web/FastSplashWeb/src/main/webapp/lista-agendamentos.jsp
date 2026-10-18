@@ -34,6 +34,8 @@
 
                             <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site.css">
 
+                            <link rel="stylesheet" href="${pageContext.request.contextPath}/css/agendamentos.css">
+
                         </head>
 
 

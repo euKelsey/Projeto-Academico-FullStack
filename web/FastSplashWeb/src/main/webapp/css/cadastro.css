@@ -1,0 +1,436 @@
+/* =====================================================
+   CADASTRO PÚBLICO DO CLIENTE
+===================================================== */
+
+.pagina-cadastro {
+    min-height: 100vh;
+
+    background:
+        radial-gradient(circle at 15% 20%,
+            rgba(22, 119, 255, 0.13),
+            transparent 28%),
+        radial-gradient(circle at 90% 75%,
+            rgba(24, 200, 255, 0.10),
+            transparent 28%),
+        linear-gradient(135deg,
+            #111923,
+            #101820);
+}
+
+.cadastro-cabecalho {
+    min-height: 78px;
+
+    display: flex;
+    align-items: center;
+
+    border-bottom:
+        1px solid rgba(255, 255, 255, 0.06);
+
+    background-color:
+        rgba(13, 18, 24, 0.90);
+
+    backdrop-filter:
+        blur(12px);
+}
+
+.cadastro-cabecalho-conteudo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 24px;
+}
+
+.voltar-site {
+    color: var(--cinza-claro);
+
+    font-size: 14px;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.voltar-site:hover {
+    color: var(--ciano);
+
+    transform:
+        translateX(-3px);
+}
+
+.cadastro-principal {
+    padding:
+        70px 0 90px;
+}
+
+.cadastro-layout {
+    display: grid;
+
+    grid-template-columns:
+        0.85fr 1.15fr;
+
+    align-items: center;
+
+    gap: 70px;
+}
+
+.cadastro-apresentacao h1 {
+    margin:
+        10px 0 20px;
+
+    color: var(--branco);
+
+    font-size:
+        clamp(38px, 5vw, 58px);
+
+    line-height: 1.06;
+}
+
+.cadastro-apresentacao>p {
+    max-width: 520px;
+
+    color: var(--cinza-claro);
+
+    font-size: 17px;
+
+    margin-bottom: 30px;
+}
+
+.cadastro-vantagens {
+    display: flex;
+    flex-direction: column;
+
+    gap: 16px;
+}
+
+.cadastro-vantagem {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 13px;
+}
+
+.cadastro-vantagem-icone {
+    min-width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(135deg,
+            var(--azul),
+            var(--ciano));
+
+    color: var(--branco);
+
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.cadastro-vantagem strong {
+    display: block;
+
+    color: var(--branco);
+
+    margin-bottom: 2px;
+}
+
+.cadastro-vantagem p {
+    color: var(--cinza);
+
+    font-size: 14px;
+}
+
+.cadastro-card {
+    padding: 34px;
+
+    border-radius: 24px;
+
+    background:
+        linear-gradient(145deg,
+            rgba(32, 43, 55, 0.98),
+            rgba(24, 34, 45, 0.98));
+
+    border:
+        1px solid rgba(255, 255, 255, 0.07);
+
+    box-shadow:
+        0 25px 65px rgba(0, 0, 0, 0.34);
+}
+
+.cadastro-card-topo {
+    margin-bottom: 28px;
+}
+
+.cadastro-card-topo span {
+    color: var(--laranja);
+
+    font-size: 12px;
+    font-weight: 800;
+
+    letter-spacing: 1.2px;
+
+    text-transform: uppercase;
+}
+
+.cadastro-card-topo h2 {
+    margin:
+        7px 0 5px;
+
+    color: var(--branco);
+
+    font-size: 28px;
+}
+
+.cadastro-card-topo p {
+    color: var(--cinza);
+
+    font-size: 14px;
+}
+
+.form-cadastro {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 18px;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+.campo-largo {
+    grid-column:
+        1 / -1;
+}
+
+.campo label {
+    color: var(--cinza-claro);
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.campo input {
+    width: 100%;
+
+    min-height: 48px;
+
+    padding:
+        0 14px;
+
+    border-radius: 10px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.08);
+
+    outline: none;
+
+    background-color:
+        rgba(9, 14, 20, 0.58);
+
+    color: var(--branco);
+
+    font-size: 15px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.campo input::placeholder {
+    color:
+        rgba(150, 162, 178, 0.72);
+}
+
+.campo input:focus {
+    border-color:
+        rgba(24, 200, 255, 0.65);
+
+    background-color:
+        rgba(9, 14, 20, 0.82);
+
+    box-shadow:
+        0 0 0 3px rgba(24, 200, 255, 0.08);
+}
+
+.cadastro-acoes {
+    grid-column:
+        1 / -1;
+
+    margin-top: 6px;
+}
+
+.botao-cadastrar {
+    width: 100%;
+
+    min-height: 50px;
+
+    border: none;
+
+    border-radius: 11px;
+
+    cursor: pointer;
+
+    background:
+        linear-gradient(135deg,
+            var(--azul),
+            var(--ciano));
+
+    color: var(--branco);
+
+    font-size: 15px;
+    font-weight: 800;
+
+    box-shadow:
+        0 12px 30px rgba(22, 119, 255, 0.20);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        opacity 0.2s ease;
+}
+
+.botao-cadastrar:hover {
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 16px 34px rgba(24, 200, 255, 0.24);
+}
+
+.botao-cadastrar:disabled {
+    cursor: not-allowed;
+
+    opacity: 0.65;
+
+    transform: none;
+}
+
+.mensagem-formulario {
+    grid-column:
+        1 / -1;
+
+    display: none;
+
+    padding: 13px 14px;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+}
+
+.mensagem-formulario.visivel {
+    display: block;
+}
+
+.mensagem-formulario.erro {
+    background-color:
+        rgba(255, 82, 82, 0.10);
+
+    border:
+        1px solid rgba(255, 82, 82, 0.24);
+
+    color: #ffb3b3;
+}
+
+.mensagem-formulario.sucesso {
+    background-color:
+        rgba(24, 200, 255, 0.09);
+
+    border:
+        1px solid rgba(24, 200, 255, 0.24);
+
+    color: var(--ciano-claro);
+}
+
+.cadastro-sucesso-acoes {
+    margin-top: 12px;
+}
+
+.cadastro-sucesso-acoes a {
+    color: var(--branco);
+
+    font-weight: 800;
+}
+
+.cadastro-observacao {
+    grid-column:
+        1 / -1;
+
+    color: var(--cinza);
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+
+    .cadastro-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .cadastro-apresentacao {
+        text-align: center;
+    }
+
+    .cadastro-apresentacao>p {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .cadastro-vantagens {
+        max-width: 620px;
+
+        margin:
+            0 auto;
+    }
+
+    .cadastro-vantagem {
+        text-align: left;
+    }
+}
+
+@media (max-width: 560px) {
+
+    .cadastro-cabecalho-conteudo {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        padding:
+            15px 0;
+    }
+
+    .cadastro-principal {
+        padding:
+            45px 0 65px;
+    }
+
+    .cadastro-card {
+        padding:
+            26px 20px;
+    }
+
+    .form-cadastro {
+        grid-template-columns: 1fr;
+    }
+
+    .campo-largo,
+    .cadastro-acoes,
+    .mensagem-formulario,
+    .cadastro-observacao {
+        grid-column: auto;
+    }
+}

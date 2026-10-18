@@ -1,0 +1,140 @@
+/* =====================================================
+   ÁREA INTERNA - VEÍCULOS
+===================================================== */
+
+.veiculo-identidade {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+}
+
+.veiculo-icone {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(135deg,
+            rgba(22, 119, 255, 0.22),
+            rgba(24, 200, 255, 0.11));
+
+    border:
+        1px solid rgba(24, 200, 255, 0.15);
+
+    font-size: 19px;
+}
+
+.veiculo-identidade strong {
+    display: block;
+
+    color: var(--branco);
+
+    margin-bottom: 2px;
+}
+
+.veiculo-identidade span {
+    color: var(--cinza);
+
+    font-size: 12px;
+}
+
+.placa-badge {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-width: 92px;
+
+    padding:
+        7px 10px;
+
+    border-radius: 8px;
+
+    background-color:
+        rgba(255, 255, 255, 0.04);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.08);
+
+    color: var(--branco);
+
+    font-size: 13px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.7px;
+}
+
+.cliente-vinculo {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+}
+
+.cliente-vinculo strong {
+    color: var(--cinza-claro);
+
+    font-size: 13px;
+}
+
+.cliente-vinculo span {
+    color: var(--cinza);
+
+    font-size: 11px;
+}
+
+.campo-interno select {
+    width: 100%;
+
+    min-height: 49px;
+
+    padding:
+        0 40px 0 14px;
+
+    border-radius: 10px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.08);
+
+    outline: none;
+
+    background-color:
+        rgba(9, 14, 20, 0.58);
+
+    color: var(--branco);
+
+    font-size: 14px;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.campo-interno select:focus {
+    border-color:
+        rgba(24, 200, 255, 0.62);
+
+    box-shadow:
+        0 0 0 3px rgba(24, 200, 255, 0.08);
+}
+
+.campo-interno select option {
+    background-color: var(--grafite);
+
+    color: var(--branco);
+}

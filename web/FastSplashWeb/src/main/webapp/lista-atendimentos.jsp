@@ -40,6 +40,9 @@
 
                                         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site.css">
 
+                                        <link rel="stylesheet"
+                                            href="${pageContext.request.contextPath}/css/atendimentos.css">
+
                                     </head>
 
 
@@ -262,11 +265,18 @@
 
                                                                                     <td>
 
-                                                                                        <span class="status-badge <%= pagamentoPago ? "status-finalizado" : "status-aguardando" %>">
-                                                                                        
-                                                                                            <%= pagamentoPago ? "PAGO"
-                                                                                                : "PENDENTE" %>
-                                                                                        </span>
+                                                                                        <span <% String
+                                                                                            classePagamento=pagamentoPago
+                                                                                            ? "status-finalizado"
+                                                                                            : "status-aguardando" ; %>
+
+                                                                                            <span
+                                                                                                class="status-badge <%= classePagamento %>">
+
+                                                                                                <%= pagamentoPago
+                                                                                                    ? "PAGO"
+                                                                                                    : "PENDENTE" %>
+                                                                                            </span>
 
                                                                                     </td>
 

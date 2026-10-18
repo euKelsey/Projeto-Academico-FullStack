@@ -1,0 +1,392 @@
+/* =====================================================
+   ÁREA INTERNA - AGENDAMENTOS
+===================================================== */
+
+.agendamento-identidade {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+.agendamento-identidade strong {
+    color: var(--branco);
+
+    font-size: 14px;
+}
+
+.agendamento-identidade span {
+    color: var(--cinza);
+
+    font-size: 12px;
+}
+
+.agendamento-servicos {
+    max-width: 310px;
+
+    color: var(--cinza-claro);
+
+    line-height: 1.55;
+}
+
+.agendamento-data {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+.agendamento-data strong {
+    color: var(--branco);
+
+    font-size: 14px;
+}
+
+.agendamento-data span {
+    color: var(--cinza);
+
+    font-size: 12px;
+}
+
+.valor-destaque {
+    color: var(--branco);
+
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+.status-badge {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-height: 29px;
+
+    padding:
+        0 10px;
+
+    border-radius: 20px;
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.7px;
+
+    text-transform: uppercase;
+
+    border:
+        1px solid transparent;
+}
+
+.status-agendado {
+    color: var(--ciano);
+
+    background-color:
+        rgba(24, 200, 255, 0.08);
+
+    border-color:
+        rgba(24, 200, 255, 0.18);
+}
+
+.status-cancelado {
+    color: #ffaaaa;
+
+    background-color:
+        rgba(255, 82, 82, 0.07);
+
+    border-color:
+        rgba(255, 82, 82, 0.16);
+}
+
+.status-concluido {
+    color: #a8efbf;
+
+    background-color:
+        rgba(68, 205, 112, 0.08);
+
+    border-color:
+        rgba(68, 205, 112, 0.17);
+}
+
+.acao-cancelar {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-height: 34px;
+
+    padding:
+        0 11px;
+
+    border-radius: 8px;
+
+    border:
+        1px solid rgba(255, 82, 82, 0.18);
+
+    background-color:
+        rgba(255, 82, 82, 0.06);
+
+    color: #ff9e9e;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.acao-cancelar:hover {
+    border-color:
+        rgba(255, 82, 82, 0.42);
+}
+
+.form-agendamento-card {
+    max-width: 950px;
+}
+
+.servicos-titulo {
+    grid-column:
+        1 / -1;
+
+    margin-top: 4px;
+}
+
+.servicos-titulo h3 {
+    color: var(--branco);
+
+    font-size: 17px;
+
+    margin-bottom: 4px;
+}
+
+.servicos-titulo p {
+    color: var(--cinza);
+
+    font-size: 13px;
+}
+
+.servicos-grid {
+    grid-column:
+        1 / -1;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
+}
+
+.servico-opcao {
+    position: relative;
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+    padding:
+        17px;
+
+    border-radius: 13px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.07);
+
+    background-color:
+        rgba(9, 14, 20, 0.38);
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.2s ease,
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.servico-opcao:hover {
+    transform:
+        translateY(-2px);
+
+    border-color:
+        rgba(24, 200, 255, 0.24);
+}
+
+.servico-opcao:has(input:checked) {
+    border-color:
+        rgba(24, 200, 255, 0.48);
+
+    background-color:
+        rgba(24, 200, 255, 0.07);
+}
+
+.servico-opcao input {
+    margin-top: 3px;
+
+    accent-color: var(--ciano);
+}
+
+.servico-opcao-conteudo {
+    flex: 1;
+}
+
+.servico-opcao-topo {
+    display: flex;
+
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 5px;
+}
+
+.servico-opcao strong {
+    color: var(--branco);
+
+    font-size: 14px;
+}
+
+.servico-opcao-preco {
+    color: var(--ciano);
+
+    font-size: 13px;
+
+    font-weight: 900;
+
+    white-space: nowrap;
+}
+
+.servico-opcao p {
+    color: var(--cinza);
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+.resumo-agendamento {
+    grid-column:
+        1 / -1;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding:
+        17px 18px;
+
+    margin-top: 4px;
+
+    border-radius: 12px;
+
+    border:
+        1px solid rgba(24, 200, 255, 0.12);
+
+    background:
+        linear-gradient(135deg,
+            rgba(22, 119, 255, 0.08),
+            rgba(24, 200, 255, 0.04));
+}
+
+.resumo-agendamento span {
+    color: var(--cinza-claro);
+
+    font-size: 13px;
+}
+
+.resumo-agendamento strong {
+    color: var(--branco);
+
+    font-size: 22px;
+}
+
+.mensagem-interna-erro {
+    grid-column:
+        1 / -1;
+
+    padding:
+        13px 15px;
+
+    border-radius: 10px;
+
+    border:
+        1px solid rgba(255, 82, 82, 0.20);
+
+    background-color:
+        rgba(255, 82, 82, 0.07);
+
+    color: #ffb1b1;
+
+    font-size: 13px;
+}
+
+@media (max-width: 760px) {
+
+    .servicos-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .resumo-agendamento {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+}
+
+/* =====================================================
+   AGENDAMENTOS - ORDENAÇÃO E FLUXO GUIADO
+===================================================== */
+
+.tabela-ordenavel {
+    cursor: pointer;
+
+    user-select: none;
+
+    transition:
+        color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.tabela-ordenavel:hover {
+    color: var(--ciano);
+
+    background-color:
+        rgba(24, 200, 255, 0.04);
+}
+
+.tabela-ordenavel:focus {
+    outline:
+        2px solid rgba(24, 200, 255, 0.45);
+
+    outline-offset:
+        -2px;
+}
+
+.icone-ordenacao {
+    margin-left: 5px;
+
+    color: var(--cinza);
+
+    font-size: 12px;
+}
+
+.botao-interno-principal:disabled {
+    cursor: not-allowed;
+
+    opacity: 0.45;
+
+    transform: none;
+
+    box-shadow: none;
+}

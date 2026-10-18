@@ -1,315 +1,262 @@
-<%@ page language="java"
-    contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
-<%@ page import="java.time.format.DateTimeFormatter" %>
-<%@ page import="com.fastsplash.web.model.Atendimento" %>
+    <%@ page import="java.time.format.DateTimeFormatter" %>
+        <%@ page import="com.fastsplash.web.model.Atendimento" %>
 
-<%
-    Atendimento atendimento =
-            (Atendimento) request.getAttribute(
-                    "atendimento"
-            );
+            <% Atendimento atendimento=(Atendimento) request.getAttribute( "atendimento" ); DateTimeFormatter
+                formatoDataHora=DateTimeFormatter.ofPattern( "dd/MM/yyyy HH:mm" ); String
+                status=atendimento.getStatus(); String classeStatus="status-aguardando" ; if
+                ("EM_LAVAGEM".equals(status)) { classeStatus="status-em-lavagem" ; } else if
+                ("FINALIZADO".equals(status)) { classeStatus="status-finalizado" ; } %>
 
-    DateTimeFormatter formatoDataHora =
-            DateTimeFormatter.ofPattern(
-                    "dd/MM/yyyy HH:mm"
-            );
+                <!DOCTYPE html>
 
-    String status =
-            atendimento.getStatus();
+                <html lang="pt-BR">
 
-    String classeStatus =
-            "status-aguardando";
+                <head>
 
-    if ("EM_LAVAGEM".equals(status)) {
-        classeStatus = "status-em-lavagem";
-    } else if ("FINALIZADO".equals(status)) {
-        classeStatus = "status-finalizado";
-    }
-%>
+                    <meta charset="UTF-8">
 
-<!DOCTYPE html>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<html lang="pt-BR">
+                    <title>Detalhes do atendimento | Fast Splash</title>
 
-<head>
+                    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site.css">
 
-    <meta charset="UTF-8">
+                    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/atendimentos.css">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+                </head>
 
-    <title>Detalhes do atendimento | Fast Splash</title>
 
-    <link
-        rel="stylesheet"
-        href="${pageContext.request.contextPath}/css/site.css"
-    >
+                <body class="pagina-interna">
 
-</head>
 
+                    <header class="interna-topo">
 
-<body class="pagina-interna">
+                        <div class="container interna-topo-conteudo">
 
+                            <div class="marca-cabecalho">
 
-    <header class="interna-topo">
+                                <div class="marca-nome">
 
-        <div class="container interna-topo-conteudo">
+                                    <span class="marca-fast">
+                                        Fast
+                                    </span>
 
-            <div class="marca-cabecalho">
+                                    <span class="marca-splash">
+                                        Splash
+                                    </span>
 
-                <div class="marca-nome">
+                                </div>
 
-                    <span class="marca-fast">
-                        Fast
-                    </span>
+                                <span class="marca-subtitulo">
+                                    GESTÃO
+                                </span>
 
-                    <span class="marca-splash">
-                        Splash
-                    </span>
+                            </div>
 
-                </div>
 
-                <span class="marca-subtitulo">
-                    GESTÃO
-                </span>
+                            <div class="interna-topo-acoes">
 
-            </div>
+                                <a class="interna-link" href="${pageContext.request.contextPath}/atendimento">
+                                    ← Atendimentos
+                                </a>
 
+                                <a class="interna-link" href="${pageContext.request.contextPath}/dashboard.jsp">
+                                    Dashboard
+                                </a>
 
-            <div class="interna-topo-acoes">
+                            </div>
 
-                <a
-                    class="interna-link"
-                    href="${pageContext.request.contextPath}/atendimento"
-                >
-                    ← Atendimentos
-                </a>
+                        </div>
 
-                <a
-                    class="interna-link"
-                    href="${pageContext.request.contextPath}/dashboard.jsp"
-                >
-                    Dashboard
-                </a>
+                    </header>
 
-            </div>
 
-        </div>
+                    <main class="interna-principal">
 
-    </header>
+                        <div class="container">
 
 
-    <main class="interna-principal">
+                            <section class="interna-cabecalho">
 
-        <div class="container">
+                                <div>
 
+                                    <span class="destaque-pequeno">
+                                        Atendimento #<%= atendimento.getIdAtendimento() %>
+                                    </span>
 
-            <section class="interna-cabecalho">
+                                    <h1>
+                                        Detalhes do atendimento
+                                    </h1>
 
-                <div>
+                                    <p>
+                                        Informações completas do serviço em andamento.
+                                    </p>
 
-                    <span class="destaque-pequeno">
-                        Atendimento #<%= atendimento.getIdAtendimento() %>
-                    </span>
+                                </div>
 
-                    <h1>
-                        Detalhes do atendimento
-                    </h1>
 
-                    <p>
-                        Informações completas do serviço em andamento.
-                    </p>
+                                <span class="status-badge <%= classeStatus %>">
+                                    <%= status %>
+                                </span>
 
-                </div>
+                            </section>
 
 
-                <span
-                    class="status-badge <%= classeStatus %>"
-                >
-                    <%= status %>
-                </span>
+                            <section class="form-interno-card">
 
-            </section>
+                                <div class="atendimento-detalhes-grid">
 
 
-            <section class="form-interno-card">
+                                    <div class="detalhe-card">
 
-                <div class="atendimento-detalhes-grid">
+                                        <span>
+                                            Cliente
+                                        </span>
 
+                                        <strong>
+                                            <%= atendimento.getClienteNome() %>
+                                        </strong>
 
-                    <div class="detalhe-card">
+                                    </div>
 
-                        <span>
-                            Cliente
-                        </span>
 
-                        <strong>
-                            <%= atendimento.getClienteNome() %>
-                        </strong>
+                                    <div class="detalhe-card">
 
-                    </div>
+                                        <span>
+                                            Veículo
+                                        </span>
 
+                                        <strong>
+                                            <%= atendimento.getVeiculoDescricao() %>
+                                        </strong>
 
-                    <div class="detalhe-card">
+                                    </div>
 
-                        <span>
-                            Veículo
-                        </span>
 
-                        <strong>
-                            <%= atendimento.getVeiculoDescricao() %>
-                        </strong>
+                                    <div class="detalhe-card detalhe-card-largo">
 
-                    </div>
+                                        <span>
+                                            Serviços
+                                        </span>
 
+                                        <strong>
+                                            <%= atendimento.getServicosDescricao() %>
+                                        </strong>
 
-                    <div class="detalhe-card detalhe-card-largo">
+                                    </div>
 
-                        <span>
-                            Serviços
-                        </span>
 
-                        <strong>
-                            <%= atendimento.getServicosDescricao() %>
-                        </strong>
+                                    <div class="detalhe-card">
 
-                    </div>
+                                        <span>
+                                            Agendamento
+                                        </span>
 
+                                        <strong>
+                                            #<%= atendimento.getIdAgendamento() %>
+                                        </strong>
 
-                    <div class="detalhe-card">
+                                    </div>
 
-                        <span>
-                            Agendamento
-                        </span>
 
-                        <strong>
-                            #<%= atendimento.getIdAgendamento() %>
-                        </strong>
+                                    <div class="detalhe-card">
 
-                    </div>
+                                        <span>
+                                            Status atual
+                                        </span>
 
+                                        <strong>
+                                            <%= status %>
+                                        </strong>
 
-                    <div class="detalhe-card">
+                                    </div>
 
-                        <span>
-                            Status atual
-                        </span>
 
-                        <strong>
-                            <%= status %>
-                        </strong>
+                                    <div class="detalhe-card">
 
-                    </div>
+                                        <span>
+                                            Início da lavagem
+                                        </span>
 
+                                        <strong>
 
-                    <div class="detalhe-card">
+                                            <% if ( atendimento.getDataInicio() !=null ) { %>
 
-                        <span>
-                            Início da lavagem
-                        </span>
+                                                <%= atendimento.getDataInicio().format(formatoDataHora) %>
 
-                        <strong>
+                                                    <% } else { %>
 
-                            <%
-                                if (
-                                    atendimento.getDataInicio()
-                                    != null
-                                ) {
-                            %>
+                                                        Ainda não iniciado
 
-                                <%= atendimento.getDataInicio().format(formatoDataHora) %>
+                                                        <% } %>
 
-                            <%
-                                } else {
-                            %>
+                                        </strong>
 
-                                Ainda não iniciado
+                                    </div>
 
-                            <%
-                                }
-                            %>
 
-                        </strong>
+                                    <div class="detalhe-card">
 
-                    </div>
+                                        <span>
+                                            Finalização
+                                        </span>
 
+                                        <strong>
 
-                    <div class="detalhe-card">
+                                            <% if ( atendimento.getDataFim() !=null ) { %>
 
-                        <span>
-                            Finalização
-                        </span>
+                                                <%= atendimento.getDataFim().format(formatoDataHora) %>
 
-                        <strong>
+                                                    <% } else { %>
 
-                            <%
-                                if (
-                                    atendimento.getDataFim()
-                                    != null
-                                ) {
-                            %>
+                                                        Ainda não finalizado
 
-                                <%= atendimento.getDataFim().format(formatoDataHora) %>
+                                                        <% } %>
 
-                            <%
-                                } else {
-                            %>
+                                        </strong>
 
-                                Ainda não finalizado
+                                    </div>
 
-                            <%
-                                }
-                            %>
 
-                        </strong>
+                                </div>
 
-                    </div>
 
+                                <div class="atendimento-fluxo">
 
-                </div>
+                                    <span class="fluxo-etapa <%= " AGUARDANDO".equals(status) ? "ativa" : "" %>"
+                                        >
+                                        Aguardando
+                                    </span>
 
+                                    <span class="fluxo-seta">
+                                        →
+                                    </span>
 
-                <div class="atendimento-fluxo">
+                                    <span class="fluxo-etapa <%= " EM_LAVAGEM".equals(status) ? "ativa" : "" %>"
+                                        >
+                                        Em lavagem
+                                    </span>
 
-                    <span
-                        class="fluxo-etapa <%= "AGUARDANDO".equals(status) ? "ativa" : "" %>"
-                    >
-                        Aguardando
-                    </span>
+                                    <span class="fluxo-seta">
+                                        →
+                                    </span>
 
-                    <span class="fluxo-seta">
-                        →
-                    </span>
+                                    <span class="fluxo-etapa <%= " FINALIZADO".equals(status) ? "ativa" : "" %>"
+                                        >
+                                        Finalizado
+                                    </span>
 
-                    <span
-                        class="fluxo-etapa <%= "EM_LAVAGEM".equals(status) ? "ativa" : "" %>"
-                    >
-                        Em lavagem
-                    </span>
+                                </div>
 
-                    <span class="fluxo-seta">
-                        →
-                    </span>
+                            </section>
 
-                    <span
-                        class="fluxo-etapa <%= "FINALIZADO".equals(status) ? "ativa" : "" %>"
-                    >
-                        Finalizado
-                    </span>
+                        </div>
 
-                </div>
+                    </main>
 
-            </section>
 
-        </div>
+                </body>
 
-    </main>
-
-
-</body>
-
-</html>
+                </html>
