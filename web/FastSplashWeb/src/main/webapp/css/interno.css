@@ -447,7 +447,8 @@
 }
 
 .campo-interno input,
-.campo-interno textarea {
+.campo-interno textarea,
+.campo-interno select {
     width: 100%;
 
     min-height: 49px;
@@ -475,7 +476,8 @@
 }
 
 .campo-interno input:focus,
-.campo-interno textarea:focus {
+.campo-interno textarea:focus,
+.campo-interno select:focus {
     border-color:
         rgba(24, 200, 255, 0.62);
 

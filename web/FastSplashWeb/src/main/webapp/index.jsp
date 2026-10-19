@@ -41,6 +41,10 @@
                     <a href="#servicos">Serviços</a>
                     <a href="#promocoes">Promoções</a>
                     <a href="#aplicativo">Aplicativo</a>
+
+                    <a class="menu-cadastro" href="${pageContext.request.contextPath}/cadastro.jsp">
+                        Criar minha conta
+                    </a>
                 </nav>
 
             </div>

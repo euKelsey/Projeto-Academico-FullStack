@@ -69,3 +69,6 @@ web/FastSplashWeb/build/
 # Eclipse
 .classpath
 .project
+
+# Arquivos de configuração local do Eclipse
+.classpath
