@@ -39,6 +39,10 @@ jobs:
         run: flutter analyze
 
 
+      - name: Executar testes Flutter
+        run: flutter test
+
+
   web-java:
 
     name: Validar Web Java
