@@ -23,6 +23,7 @@
                             <title>Editar veículo | Fast Splash</title>
 
                             <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site.css">
+            <link rel="stylesheet" href="${pageContext.request.contextPath}/css/interno.css">
 
                             <link rel="stylesheet" href="${pageContext.request.contextPath}/css/veiculos.css">
 
