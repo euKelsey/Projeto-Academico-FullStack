@@ -1,6 +1,10 @@
 package com.fastsplash.web.filter;
 
 import java.io.IOException;
+import java.sql.SQLException;
+
+import com.fastsplash.web.dao.ClienteDAO;
+import com.fastsplash.web.model.Cliente;
 
 import com.fastsplash.web.model.Colaborador;
 
@@ -33,6 +37,51 @@ public class AccessFilter implements Filter {
 
           String caminho = uri.substring(
                     contexto.length());
+
+          // =========================================
+          // PROTEGER APIs PRIVADAS DOS CLIENTES
+          // =========================================
+
+          if (caminho.equals("/api/clientes/me")
+                    || caminho.startsWith("/api/veiculos")
+                    || caminho.startsWith("/api/agendamentos")
+                    || caminho.startsWith("/api/pagamentos")) {
+
+               HttpSession sessaoCliente = httpRequest.getSession(false);
+
+               if (sessaoCliente != null
+                         && sessaoCliente.getAttribute("clienteLogado") != null) {
+
+                    try {
+
+                         if (!clienteAtivo(httpRequest)) {
+
+                              sessaoCliente.invalidate();
+
+                              httpResponse.setStatus(
+                                        HttpServletResponse.SC_FORBIDDEN);
+
+                              httpResponse.setContentType(
+                                        "application/json;charset=UTF-8");
+
+                              httpResponse.getWriter().print("""
+                                        {
+                                            "sucesso": false,
+                                            "mensagem": "Sua conta está inativa. Entre em contato com o Fast Splash."
+                                        }
+                                        """);
+
+                              return;
+                         }
+
+                    } catch (SQLException e) {
+
+                         throw new ServletException(
+                                   "Erro ao verificar o status do cliente.",
+                                   e);
+                    }
+               }
+          }
 
           // =========================================
           // ROTAS PÚBLICAS
@@ -244,5 +293,34 @@ public class AccessFilter implements Filter {
                     caminho.startsWith(
                               "/detalhes-atendimento.jsp");
 
+     }
+
+     // =========================================
+     // VERIFICAR STATUS DO CLIENTE NA SESSÃO
+     // =========================================
+
+     private boolean clienteAtivo(
+               HttpServletRequest request) throws SQLException {
+
+          HttpSession sessao = request.getSession(false);
+
+          if (sessao == null) {
+               return false;
+          }
+
+          Cliente clienteSessao = (Cliente) sessao.getAttribute(
+                    "clienteLogado");
+
+          if (clienteSessao == null) {
+               return false;
+          }
+
+          ClienteDAO clienteDAO = new ClienteDAO();
+
+          Cliente clienteAtual = clienteDAO.buscarPorId(
+                    clienteSessao.getIdCliente());
+
+          return clienteAtual != null
+                    && clienteAtual.isAtivo();
      }
 }

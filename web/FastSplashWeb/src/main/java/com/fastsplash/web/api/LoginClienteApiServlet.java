@@ -16,262 +16,206 @@ import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/api/auth/login")
 public class LoginClienteApiServlet
-        extends HttpServlet {
+                extends HttpServlet {
 
-    private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
+        private final ClienteDAO clienteDAO = new ClienteDAO();
 
-    private final ClienteDAO clienteDAO =
-            new ClienteDAO();
+        @Override
+        protected void doPost(
+                        HttpServletRequest request,
+                        HttpServletResponse response) throws ServletException, IOException {
 
+                request.setCharacterEncoding(
+                                "UTF-8");
 
-    @Override
-    protected void doPost(
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) throws ServletException, IOException {
+                response.setContentType(
+                                "application/json;charset=UTF-8");
 
-        request.setCharacterEncoding(
-                "UTF-8"
-        );
+                response.setCharacterEncoding(
+                                "UTF-8");
 
+                String email = limpar(
+                                request.getParameter(
+                                                "email"));
 
-        response.setContentType(
-                "application/json;charset=UTF-8"
-        );
+                String senha = limpar(
+                                request.getParameter(
+                                                "senha"));
 
-        response.setCharacterEncoding(
-                "UTF-8"
-        );
+                if (email == null
+                                || senha == null) {
 
+                        responderErro(
+                                        response,
+                                        HttpServletResponse.SC_BAD_REQUEST,
+                                        "Informe o e-mail e a senha.");
 
-        String email =
-                limpar(
-                        request.getParameter(
-                                "email"
-                        )
-                );
-
-
-        String senha =
-                limpar(
-                        request.getParameter(
-                                "senha"
-                        )
-                );
-
-
-        if (email == null
-                || senha == null) {
-
-            responderErro(
-                    response,
-                    HttpServletResponse.SC_BAD_REQUEST,
-                    "Informe o e-mail e a senha."
-            );
-
-            return;
-        }
-
-
-        try {
-
-            Cliente cliente =
-                    clienteDAO.buscarPorEmail(
-                            email
-                    );
-
-
-            if (cliente == null) {
-
-                loginInvalido(
-                        response
-                );
-
-                return;
-            }
-
-
-            boolean senhaCorreta =
-                    SenhaUtil.verificarSenha(
-                            senha,
-                            cliente.getSenhaHash()
-                    );
-
-
-            if (!senhaCorreta) {
-
-                loginInvalido(
-                        response
-                );
-
-                return;
-            }
-
-
-            // =================================
-            // MIGRAR HASH ANTIGO
-            // =================================
-
-            if (
-                SenhaUtil.hashAntigo(
-                        cliente.getSenhaHash()
-                )
-            ) {
-
-                String novoHash =
-                        SenhaUtil.gerarHash(
-                                senha
-                        );
-
-
-                clienteDAO.atualizarSenhaHash(
-                        cliente.getIdCliente(),
-                        novoHash
-                );
-
-
-                cliente.setSenhaHash(
-                        novoHash
-                );
-            }
-
-
-            // =================================
-            // CRIAR SESSÃO DO CLIENTE
-            // =================================
-
-            HttpSession sessao =
-                    request.getSession(true);
-
-
-            sessao.setAttribute(
-                    "clienteLogado",
-                    cliente
-            );
-
-
-            response.setStatus(
-                    HttpServletResponse.SC_OK
-            );
-
-
-            response.getWriter().print(
-                    """
-                    {
-                        "sucesso": true,
-                        "mensagem": "Login realizado com sucesso.",
-                        "cliente": {
-                            "idCliente": %d,
-                            "nome": "%s",
-                            "cpf": "%s",
-                            "telefone": "%s",
-                            "email": "%s"
-                        }
-                    }
-                    """.formatted(
-                            cliente.getIdCliente(),
-                            escaparJson(
-                                    cliente.getNome()
-                            ),
-                            escaparJson(
-                                    cliente.getCpf()
-                            ),
-                            escaparJson(
-                                    cliente.getTelefone()
-                            ),
-                            escaparJson(
-                                    cliente.getEmail()
-                            )
-                    )
-            );
-
-
-        } catch (SQLException e) {
-
-            throw new ServletException(
-                    "Erro ao realizar login do cliente.",
-                    e
-            );
-        }
-    }
-
-
-    private void loginInvalido(
-            HttpServletResponse response
-    ) throws IOException {
-
-        responderErro(
-                response,
-                HttpServletResponse.SC_UNAUTHORIZED,
-                "E-mail ou senha inválidos."
-        );
-    }
-
-
-    private void responderErro(
-            HttpServletResponse response,
-            int status,
-            String mensagem
-    ) throws IOException {
-
-        response.setStatus(
-                status
-        );
-
-
-        response.getWriter().print(
-                """
-                {
-                    "sucesso": false,
-                    "mensagem": "%s"
+                        return;
                 }
-                """.formatted(
-                        escaparJson(
-                                mensagem
-                        )
-                )
-        );
-    }
 
+                try {
 
-    private String limpar(
-            String valor
-    ) {
+                        Cliente cliente = clienteDAO.buscarPorEmail(
+                                        email);
 
-        if (valor == null) {
+                        if (cliente == null) {
 
-            return null;
+                                loginInvalido(
+                                                response);
+
+                                return;
+                        }
+
+                        // =========================================
+                        // VERIFICAR STATUS DO CLIENTE
+                        // =========================================
+
+                        if (!cliente.isAtivo()) {
+
+                                responderErro(
+                                                response,
+                                                HttpServletResponse.SC_FORBIDDEN,
+                                                "Sua conta está inativa. Entre em contato "
+                                                                + "com o Fast Splash para regularizar o acesso.");
+
+                                return;
+                        }
+
+                        boolean senhaCorreta = SenhaUtil.verificarSenha(
+                                        senha,
+                                        cliente.getSenhaHash());
+
+                        if (!senhaCorreta) {
+
+                                loginInvalido(
+                                                response);
+
+                                return;
+                        }
+
+                        // =================================
+                        // MIGRAR HASH ANTIGO
+                        // =================================
+
+                        if (SenhaUtil.hashAntigo(
+                                        cliente.getSenhaHash())) {
+
+                                String novoHash = SenhaUtil.gerarHash(
+                                                senha);
+
+                                clienteDAO.atualizarSenhaHash(
+                                                cliente.getIdCliente(),
+                                                novoHash);
+
+                                cliente.setSenhaHash(
+                                                novoHash);
+                        }
+
+                        // =================================
+                        // CRIAR SESSÃO DO CLIENTE
+                        // =================================
+
+                        HttpSession sessao = request.getSession(true);
+
+                        sessao.setAttribute(
+                                        "clienteLogado",
+                                        cliente);
+
+                        response.setStatus(
+                                        HttpServletResponse.SC_OK);
+
+                        response.getWriter().print(
+                                        """
+                                                        {
+                                                            "sucesso": true,
+                                                            "mensagem": "Login realizado com sucesso.",
+                                                            "cliente": {
+                                                                "idCliente": %d,
+                                                                "nome": "%s",
+                                                                "cpf": "%s",
+                                                                "telefone": "%s",
+                                                                "email": "%s"
+                                                            }
+                                                        }
+                                                        """.formatted(
+                                                        cliente.getIdCliente(),
+                                                        escaparJson(
+                                                                        cliente.getNome()),
+                                                        escaparJson(
+                                                                        cliente.getCpf()),
+                                                        escaparJson(
+                                                                        cliente.getTelefone()),
+                                                        escaparJson(
+                                                                        cliente.getEmail())));
+
+                } catch (SQLException e) {
+
+                        throw new ServletException(
+                                        "Erro ao realizar login do cliente.",
+                                        e);
+                }
         }
 
+        private void loginInvalido(
+                        HttpServletResponse response) throws IOException {
 
-        valor = valor.trim();
-
-
-        if (valor.isEmpty()) {
-
-            return null;
+                responderErro(
+                                response,
+                                HttpServletResponse.SC_UNAUTHORIZED,
+                                "E-mail ou senha inválidos.");
         }
 
+        private void responderErro(
+                        HttpServletResponse response,
+                        int status,
+                        String mensagem) throws IOException {
 
-        return valor;
-    }
+                response.setStatus(
+                                status);
 
-
-    private String escaparJson(
-            String valor
-    ) {
-
-        if (valor == null) {
-
-            return "";
+                response.getWriter().print(
+                                """
+                                                {
+                                                    "sucesso": false,
+                                                    "mensagem": "%s"
+                                                }
+                                                """.formatted(
+                                                escaparJson(
+                                                                mensagem)));
         }
 
+        private String limpar(
+                        String valor) {
 
-        return valor
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r");
-    }
+                if (valor == null) {
+
+                        return null;
+                }
+
+                valor = valor.trim();
+
+                if (valor.isEmpty()) {
+
+                        return null;
+                }
+
+                return valor;
+        }
+
+        private String escaparJson(
+                        String valor) {
+
+                if (valor == null) {
+
+                        return "";
+                }
+
+                return valor
+                                .replace("\\", "\\\\")
+                                .replace("\"", "\\\"")
+                                .replace("\n", "\\n")
+                                .replace("\r", "\\r");
+        }
 }

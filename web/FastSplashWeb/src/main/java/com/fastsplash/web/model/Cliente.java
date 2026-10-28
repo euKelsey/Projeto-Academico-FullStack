@@ -8,6 +8,7 @@ public class Cliente {
     private String telefone;
     private String email;
     private String senhaHash;
+    private boolean ativo = true;
 
     public Cliente() {
     }
@@ -74,5 +75,13 @@ public class Cliente {
 
     public void setSenhaHash(String senhaHash) {
         this.senhaHash = senhaHash;
+    }
+
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(boolean ativo) {
+        this.ativo = ativo;
     }
 }
