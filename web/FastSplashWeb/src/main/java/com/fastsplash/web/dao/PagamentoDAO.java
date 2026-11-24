@@ -360,6 +360,7 @@ public class PagamentoDAO {
                                 WHERE a.id_agendamento = ?
                                   AND v.id_cliente = ?
                                   AND a.status <> 'CANCELADO'
+                                  AND a.arquivado_em IS NULL
 
                                 GROUP BY
                                     a.id_agendamento
@@ -397,6 +398,65 @@ public class PagamentoDAO {
                 try {
 
                         conexao.setAutoCommit(false);
+
+                        String bloquearAgendamento = """
+                                SELECT id_agendamento
+                                FROM agendamento
+                                WHERE id_agendamento = ?
+                                  AND arquivado_em IS NULL
+                                  AND status <> 'CANCELADO'
+                                FOR UPDATE
+                                """;
+
+                        try (PreparedStatement bloqueio =
+                                conexao.prepareStatement(
+                                    bloquearAgendamento)) {
+
+                            bloqueio.setInt(1, idAgendamento);
+
+                            try (ResultSet resultado =
+                                    bloqueio.executeQuery()) {
+
+                                if (!resultado.next()) {
+                                    conexao.rollback();
+                                    return false;
+                                }
+                            }
+                        }
+
+
+
+                        String verificarPagamento = """
+                                SELECT status_pagamento,
+                                       arquivado_em
+                                FROM pagamento
+                                WHERE id_agendamento = ?
+                                FOR UPDATE
+                                """;
+
+                        try (PreparedStatement verificacao =
+                                conexao.prepareStatement(
+                                    verificarPagamento)) {
+
+                            verificacao.setInt(1, idAgendamento);
+
+                            try (ResultSet resultado =
+                                    verificacao.executeQuery()) {
+
+                                if (resultado.next()) {
+
+                                    if (resultado.getTimestamp(
+                                            "arquivado_em") != null
+                                            || !"PENDENTE".equals(
+                                                resultado.getString(
+                                                    "status_pagamento"))) {
+
+                                        conexao.rollback();
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
 
                         double valorTotal;
 
@@ -503,6 +563,244 @@ public class PagamentoDAO {
                 }
 
                 return agendamentosPagos;
+        }
+
+
+        public List<Pagamento> listarPorStatus(String filtro)
+                        throws SQLException {
+
+                String condicao = switch (
+                        filtro == null ? "pendentes" : filtro
+                ) {
+                    case "pagos" ->
+                        "p.status_pagamento = 'PAGO' AND p.arquivado_em IS NULL";
+
+                    case "cancelados" ->
+                        "p.status_pagamento = 'CANCELADO' AND p.arquivado_em IS NULL";
+
+                    case "arquivados" ->
+                        "p.arquivado_em IS NOT NULL";
+
+                    default ->
+                        "a.status <> 'CANCELADO' AND a.arquivado_em IS NULL "
+                        + "AND p.arquivado_em IS NULL "
+                        + "AND COALESCE(p.status_pagamento, 'PENDENTE') = 'PENDENTE'";
+                };
+
+                String sql = """
+                                SELECT
+                                    a.id_agendamento,
+
+                                    COALESCE(
+                                        p.id_pagamento,
+                                        0
+                                    ) AS id_pagamento,
+
+                                    p.data_pagamento,
+                                    p.arquivado_em,
+
+                                    COALESCE(
+                                        p.valor,
+                                        SUM(ags.valor_praticado),
+                                        0
+                                    ) AS valor,
+
+                                    p.forma_pagamento,
+
+                                    COALESCE(
+                                        p.status_pagamento,
+                                        'PENDENTE'
+                                    ) AS status_pagamento,
+
+                                    c.nome AS cliente,
+
+                                    CONCAT(
+                                        v.marca,
+                                        ' ',
+                                        v.modelo,
+                                        ' - ',
+                                        v.placa
+                                    ) AS veiculo,
+
+                                    GROUP_CONCAT(
+                                        s.nome
+                                        ORDER BY s.nome
+                                        SEPARATOR ', '
+                                    ) AS servicos,
+
+                                    a.data AS data_agendamento,
+
+                                    a.horario AS horario_agendamento
+
+                                FROM agendamento a
+
+                                INNER JOIN veiculo v
+                                    ON v.id_veiculo =
+                                       a.id_veiculo
+
+                                INNER JOIN cliente c
+                                    ON c.id_cliente =
+                                       v.id_cliente
+
+                                LEFT JOIN pagamento p
+                                    ON p.id_agendamento =
+                                       a.id_agendamento
+
+                                LEFT JOIN agendamento_servico ags
+                                    ON ags.id_agendamento =
+                                       a.id_agendamento
+
+                                LEFT JOIN servico s
+                                    ON s.id_servico =
+                                       ags.id_servico
+
+                                WHERE %s
+
+                                GROUP BY
+                                    a.id_agendamento,
+                                    p.id_pagamento,
+                                    p.data_pagamento,
+                                    p.arquivado_em,
+                                    p.valor,
+                                    p.forma_pagamento,
+                                    p.status_pagamento,
+                                    c.nome,
+                                    v.marca,
+                                    v.modelo,
+                                    v.placa,
+                                    a.data,
+                                    a.horario
+
+                                ORDER BY
+                                    a.data DESC,
+                                    a.horario DESC
+                                """.formatted(condicao);
+
+                List<Pagamento> pagamentos = new ArrayList<>();
+
+                try (
+                                Connection conexao = Conexao.conectar();
+
+                                PreparedStatement comando = conexao.prepareStatement(sql);
+
+                                ResultSet resultado = comando.executeQuery()) {
+
+                        while (resultado.next()) {
+
+                                Pagamento pagamento = new Pagamento();
+
+                                pagamento.setIdPagamento(
+                                                resultado.getInt(
+                                                                "id_pagamento"));
+
+                                pagamento.setIdAgendamento(
+                                                resultado.getInt(
+                                                                "id_agendamento"));
+
+                                Timestamp dataPagamento = resultado.getTimestamp(
+                                                "data_pagamento");
+
+                                if (dataPagamento != null) {
+
+                                        pagamento.setDataPagamento(
+                                                        dataPagamento
+                                                                        .toLocalDateTime());
+                                }
+
+                                pagamento.setValor(
+                                                resultado.getDouble(
+                                                                "valor"));
+
+                                pagamento.setFormaPagamento(
+                                                resultado.getString(
+                                                                "forma_pagamento"));
+
+                                pagamento.setStatusPagamento(
+                                                resultado.getString(
+                                                                "status_pagamento"));
+
+                                pagamento.setClienteNome(
+                                                resultado.getString(
+                                                                "cliente"));
+
+                                pagamento.setVeiculoDescricao(
+                                                resultado.getString(
+                                                                "veiculo"));
+
+                                pagamento.setServicosDescricao(
+                                                resultado.getString(
+                                                                "servicos"));
+
+                                pagamento.setDataAgendamento(
+                                                resultado
+                                                                .getDate(
+                                                                                "data_agendamento")
+                                                                .toLocalDate());
+
+                                pagamento.setHorarioAgendamento(
+                                                resultado
+                                                                .getTime(
+                                                                                "horario_agendamento")
+                                                                .toLocalTime());
+
+                                pagamento.setArquivadoEm(
+                                        resultado.getObject(
+                                                "arquivado_em",
+                                                java.time.LocalDateTime.class)
+                                );
+
+                                pagamentos.add(
+                                                pagamento);
+                        }
+                }
+
+                return pagamentos;
+        }
+
+
+        public boolean arquivarPagamento(
+                int idPagamento
+        ) throws SQLException {
+
+                String sql = """
+                        UPDATE pagamento
+                        SET arquivado_em = CURRENT_TIMESTAMP
+                        WHERE id_pagamento = ?
+                          AND arquivado_em IS NULL
+                          AND status_pagamento IN (
+                              'PAGO', 'CANCELADO'
+                          )
+                        """;
+
+                try (Connection conexao = Conexao.conectar();
+                     PreparedStatement comando =
+                             conexao.prepareStatement(sql)) {
+
+                    comando.setInt(1, idPagamento);
+
+                    return comando.executeUpdate() == 1;
+                }
+        }
+
+        public boolean restaurarPagamento(
+                int idPagamento
+        ) throws SQLException {
+
+                String sql = """
+                        UPDATE pagamento
+                        SET arquivado_em = NULL
+                        WHERE id_pagamento = ?
+                          AND arquivado_em IS NOT NULL
+                        """;
+
+                try (Connection conexao = Conexao.conectar();
+                     PreparedStatement comando =
+                             conexao.prepareStatement(sql)) {
+
+                    comando.setInt(1, idPagamento);
+
+                    return comando.executeUpdate() == 1;
+                }
         }
 
 }

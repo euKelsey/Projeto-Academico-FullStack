@@ -27,7 +27,11 @@ public class AtendimentoDAO {
         String sql = """
                 INSERT INTO atendimento
                 (id_agendamento)
-                VALUES (?)
+                SELECT id_agendamento
+                FROM agendamento
+                WHERE id_agendamento = ?
+                  AND status = 'AGENDADO'
+                  AND arquivado_em IS NULL
                 """;
 
 
@@ -48,7 +52,10 @@ public class AtendimentoDAO {
             );
 
 
-            comando.executeUpdate();
+            if (comando.executeUpdate() != 1) {
+                throw new SQLException(
+                        "Agendamento indisponivel para atendimento.");
+            }
 
 
             try (
@@ -81,6 +88,7 @@ public class AtendimentoDAO {
                     at.status,
                     at.data_inicio,
                     at.data_fim,
+                    at.arquivado_em,
                     c.nome AS cliente,
 
                     CONCAT(
@@ -125,6 +133,7 @@ public class AtendimentoDAO {
                     at.status,
                     at.data_inicio,
                     at.data_fim,
+                    at.arquivado_em,
                     c.nome,
                     v.marca,
                     v.modelo,
@@ -183,6 +192,7 @@ public class AtendimentoDAO {
                     at.status,
                     at.data_inicio,
                     at.data_fim,
+                    at.arquivado_em,
                     c.nome AS cliente,
 
                     CONCAT(
@@ -229,6 +239,7 @@ public class AtendimentoDAO {
                     at.status,
                     at.data_inicio,
                     at.data_fim,
+                    at.arquivado_em,
                     c.nome,
                     v.marca,
                     v.modelo,
@@ -464,6 +475,7 @@ public class AtendimentoDAO {
 
                 WHERE at.id_atendimento = ?
                   AND at.status = 'AGUARDANDO'
+                  AND at.arquivado_em IS NULL
                   AND p.status_pagamento = 'PAGO'
                 """;
 
@@ -511,6 +523,7 @@ public class AtendimentoDAO {
                     data_fim = NOW()
                 WHERE id_atendimento = ?
                   AND status = 'EM_LAVAGEM'
+                  AND arquivado_em IS NULL
                 """;
 
 
@@ -710,6 +723,88 @@ public class AtendimentoDAO {
         );
 
 
+        atendimento.setArquivadoEm(
+                resultado.getObject(
+                        "arquivado_em",
+                        java.time.LocalDateTime.class)
+        );
+
         return atendimento;
     }
+
+    public List<Atendimento> listarPorStatus(
+            String filtro
+    ) throws SQLException {
+
+        List<Atendimento> atendimentos = listarTodos();
+
+        return atendimentos.stream()
+                .filter(atendimento -> switch (
+                        filtro == null ? "aguardando" : filtro
+                ) {
+                    case "arquivados" ->
+                        atendimento.isArquivado();
+
+                    case "emLavagem" ->
+                        !atendimento.isArquivado()
+                        && "EM_LAVAGEM".equals(
+                                atendimento.getStatus());
+
+                    case "finalizados" ->
+                        !atendimento.isArquivado()
+                        && "FINALIZADO".equals(
+                                atendimento.getStatus());
+
+                    default ->
+                        !atendimento.isArquivado()
+                        && "AGUARDANDO".equals(
+                                atendimento.getStatus());
+                })
+                .toList();
+    }
+
+    public boolean arquivarAtendimento(
+            int idAtendimento
+    ) throws SQLException {
+
+        String sql = """
+                UPDATE atendimento
+                SET arquivado_em = CURRENT_TIMESTAMP
+                WHERE id_atendimento = ?
+                  AND status = 'FINALIZADO'
+                  AND arquivado_em IS NULL
+                """;
+
+        try (Connection conexao = Conexao.conectar();
+             PreparedStatement comando =
+                     conexao.prepareStatement(sql)) {
+
+            comando.setInt(1, idAtendimento);
+
+            return comando.executeUpdate() == 1;
+        }
+    }
+
+    public boolean restaurarAtendimento(
+            int idAtendimento
+    ) throws SQLException {
+
+        String sql = """
+                UPDATE atendimento
+                SET arquivado_em = NULL
+                WHERE id_atendimento = ?
+                  AND status = 'FINALIZADO'
+                  AND arquivado_em IS NOT NULL
+                """;
+
+        try (Connection conexao = Conexao.conectar();
+             PreparedStatement comando =
+                     conexao.prepareStatement(sql)) {
+
+            comando.setInt(1, idAtendimento);
+
+            return comando.executeUpdate() == 1;
+        }
+    }
+
 }

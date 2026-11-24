@@ -6,5 +6,7 @@ public enum ResultadoStatusCliente {
     CLIENTE_NAO_ENCONTRADO,
     JA_INATIVO,
     JA_ATIVO,
+    JA_EXCLUIDO,
+    NAO_EXCLUIDO,
     POSSUI_PENDENCIAS
 }

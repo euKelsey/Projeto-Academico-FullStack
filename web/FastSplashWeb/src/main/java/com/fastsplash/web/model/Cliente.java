@@ -1,5 +1,7 @@
 package com.fastsplash.web.model;
 
+import java.time.LocalDateTime;
+
 public class Cliente {
 
     private int idCliente;
@@ -9,6 +11,7 @@ public class Cliente {
     private String email;
     private String senhaHash;
     private boolean ativo = true;
+    private LocalDateTime excluidoEm;
 
     public Cliente() {
     }
@@ -83,5 +86,17 @@ public class Cliente {
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
+    }
+
+    public LocalDateTime getExcluidoEm() {
+        return excluidoEm;
+    }
+
+    public void setExcluidoEm(LocalDateTime excluidoEm) {
+        this.excluidoEm = excluidoEm;
+    }
+
+    public boolean isExcluido() {
+        return excluidoEm != null;
     }
 }

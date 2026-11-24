@@ -4,21 +4,50 @@
         <%@ page import="java.time.format.DateTimeFormatter" %>
             <%@ page import="com.fastsplash.web.model.Agendamento" %>
 
-                <% List<Agendamento> agendamentos =
-                    (List<Agendamento>) request.getAttribute(
-                        "agendamentos"
-                        );
 
-                        DateTimeFormatter formatoData =
-                        DateTimeFormatter.ofPattern(
-                        "dd/MM/yyyy"
-                        );
+<%
+    List<Agendamento> agendamentos =
+        (List<Agendamento>) request.getAttribute("agendamentos");
 
-                        DateTimeFormatter formatoHora =
-                        DateTimeFormatter.ofPattern(
-                        "HH:mm"
-                        );
-                        %>
+    DateTimeFormatter formatoData =
+        DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    DateTimeFormatter formatoHora =
+        DateTimeFormatter.ofPattern("HH:mm");
+
+    String filtro = request.getParameter("filtro");
+
+    if (!"concluidos".equals(filtro)
+            && !"cancelados".equals(filtro)
+            && !"arquivados".equals(filtro)) {
+        filtro = "agendados";
+    }
+
+    boolean administrador =
+        "ADMINISTRADOR".equals(
+            session.getAttribute("nivelAcesso"));
+
+    String resultado = request.getParameter("status");
+    String erro = request.getParameter("erro");
+
+    String mensagemSucesso = switch (
+        resultado == null ? "" : resultado
+    ) {
+        case "arquivado" ->
+            "Agendamento arquivado com sucesso.";
+
+        case "restaurado" ->
+            "Agendamento restaurado com sucesso.";
+
+        default -> "";
+    };
+
+    String mensagemErro =
+        "operacaoInvalida".equals(erro)
+        ? "Não foi possível realizar esta operação. Verifique o status e a existência de atendimentos ou pagamentos pendentes."
+        : "";
+%>
+
 
                         <!DOCTYPE html>
 
@@ -37,52 +66,81 @@
 
                             <link rel="stylesheet" href="${pageContext.request.contextPath}/css/agendamentos.css">
 
-                        </head>
+                        <style>
+    .filtros-clientes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 20px;
+    }
+
+    .filtro-cliente {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 18px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .filtro-cliente:hover {
+        border-color: #f97316;
+    }
+
+    .filtro-selecionado {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: #ffffff;
+    }
+
+    .aviso-sucesso-cliente {
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .acoes-tabela {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .acoes-tabela form {
+        margin: 0;
+    }
+
+    .acao-status-cliente {
+        cursor: pointer;
+        padding: 7px 12px;
+        border: 1px solid currentColor;
+        border-radius: 6px;
+        font-weight: 600;
+        background: transparent;
+    }
+
+    .acao-inativar-cliente {
+        color: #b45309;
+    }
+
+    .acao-reativar-cliente {
+        color: #15803d;
+    }
+</style>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/menu-lateral.css">
+</head>
 
 
-                        <body class="pagina-interna">
+                        <body class="pagina-interna fs-layout">
+<jsp:include page="/WEB-INF/includes/menu-lateral.jsp" />
 
 
-                            <header class="interna-topo">
-
-                                <div class="container interna-topo-conteudo">
-
-                                    <div class="marca-cabecalho">
-
-                                        <div class="marca-nome">
-
-                                            <span class="marca-fast">
-                                                Fast
-                                            </span>
-
-                                            <span class="marca-splash">
-                                                Splash
-                                            </span>
-
-                                        </div>
-
-                                        <span class="marca-subtitulo">
-                                            GESTÃO
-                                        </span>
-
-                                    </div>
 
 
-                                    <div class="interna-topo-acoes">
-
-                                        <a class="interna-link" href="${pageContext.request.contextPath}/dashboard.jsp">
-                                            ← Dashboard
-                                        </a>
-
-                                        <a class="interna-link" href="${pageContext.request.contextPath}/logout">
-                                            Sair
-                                        </a>
-
-                                    </div>
-
-                                </div>
-
-                            </header>
 
 
                             <main class="interna-principal">
@@ -90,7 +148,19 @@
                                 <div class="container">
 
 
-                                    <section class="interna-cabecalho">
+
+<% if (!mensagemSucesso.isEmpty()) { %>
+    <div class="aviso-sucesso-cliente" role="status">
+        <strong><%= mensagemSucesso %></strong>
+    </div>
+<% } %>
+
+<% if (!mensagemErro.isEmpty()) { %>
+    <div class="aviso-interno" role="alert">
+        <strong><%= mensagemErro %></strong>
+    </div>
+<% } %>
+<section class="interna-cabecalho">
 
                                         <div>
 
@@ -119,6 +189,33 @@
 
 
                                     <section class="tabela-card">
+<nav class="filtros-clientes" aria-label="Status dos agendamentos">
+
+    <a class="filtro-cliente <%= "agendados".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/agendamento?filtro=agendados">
+        Agendados
+    </a>
+
+    <a class="filtro-cliente <%= "concluidos".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/agendamento?filtro=concluidos">
+        Concluídos
+    </a>
+
+    <a class="filtro-cliente <%= "cancelados".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/agendamento?filtro=cancelados">
+        Cancelados
+    </a>
+
+    <a class="filtro-cliente <%= "arquivados".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/agendamento?filtro=arquivados">
+        Arquivados
+    </a>
+</nav>
+
 
                                         <div class="tabela-pesquisa">
 
@@ -277,6 +374,10 @@
 
                                                                     <span class="status-badge <%= classeStatus %>">
                                                                         <%= status %>
+
+    <% if (agendamento.isArquivado()) { %>
+        <small> · Arquivado</small>
+    <% } %>
                                                                     </span>
 
                                                                 </td>
@@ -284,38 +385,72 @@
 
                                                                 <td>
 
-                                                                    <% if ( "AGENDADO" .equals( status ) ) { %>
 
+<div class="acoes-tabela">
 
-                                                                        <form
-                                                                            action="${pageContext.request.contextPath}/agendamento"
-                                                                            method="post">
+    <% if ("AGENDADO".equals(status)
+            && !agendamento.isArquivado()) { %>
 
-                                                                            <input type="hidden" name="acao"
-                                                                                value="cancelar">
+        <form action="${pageContext.request.contextPath}/agendamento"
+              method="post">
 
-                                                                            <input type="hidden" name="idAgendamento"
-                                                                                value="<%= agendamento.getIdAgendamento() %>">
+            <input type="hidden" name="acao" value="cancelar">
+            <input type="hidden" name="idAgendamento"
+                   value="<%= agendamento.getIdAgendamento() %>">
 
-                                                                            <button class="acao-cancelar" type="submit"
-                                                                                onclick="return confirm('Deseja realmente cancelar este agendamento?');">
-                                                                                Cancelar
-                                                                            </button>
+            <button class="acao-cancelar" type="submit"
+                    onclick="return confirm('Deseja cancelar este agendamento?');">
+                Cancelar
+            </button>
 
-                                                                        </form>
+        </form>
 
+    <% } else if (administrador && agendamento.isArquivado()) { %>
 
-                                                                        <% } else { %>
+        <form action="${pageContext.request.contextPath}/agendamento"
+              method="post">
 
+            <input type="hidden" name="acao" value="restaurar">
+            <input type="hidden" name="filtro" value="<%= filtro %>">
+            <input type="hidden" name="idAgendamento"
+                   value="<%= agendamento.getIdAgendamento() %>">
 
-                                                                            <span class="dashboard-card-acao">
-                                                                                —
-                                                                            </span>
+            <button class="acao-status-cliente acao-reativar-cliente"
+                    type="submit">
+                Restaurar
+            </button>
 
+        </form>
 
-                                                                            <% } %>
+    <% } else if (administrador
+            && ("CONCLUIDO".equals(status)
+                || "CANCELADO".equals(status))) { %>
 
-                                                                </td>
+        <form action="${pageContext.request.contextPath}/agendamento"
+              method="post">
+
+            <input type="hidden" name="acao" value="arquivar">
+            <input type="hidden" name="filtro" value="<%= filtro %>">
+            <input type="hidden" name="idAgendamento"
+                   value="<%= agendamento.getIdAgendamento() %>">
+
+            <button class="acao-status-cliente acao-inativar-cliente"
+                    type="submit"
+                    onclick="return confirm('Deseja arquivar este agendamento?');">
+                Arquivar
+            </button>
+
+        </form>
+
+    <% } else { %>
+
+        <span class="dashboard-card-acao">—</span>
+
+    <% } %>
+
+</div>
+
+</td>
 
                                                             </tr>
 
@@ -333,7 +468,7 @@
 
                                                     <div class="estado-vazio">
 
-                                                        Nenhum agendamento cadastrado.
+                                                        Nenhum agendamento encontrado nesta categoria.
 
                                                     </div>
 
@@ -590,6 +725,7 @@
 
                             </script>
 
-                        </body>
+                        <script src="${pageContext.request.contextPath}/js/menu-lateral.js"></script>
+</body>
 
                         </html>

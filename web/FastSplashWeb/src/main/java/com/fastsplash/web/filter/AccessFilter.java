@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.fastsplash.web.dao.ClienteDAO;
+import com.fastsplash.web.dao.ColaboradorDAO;
 import com.fastsplash.web.model.Cliente;
 
 import com.fastsplash.web.model.Colaborador;
@@ -119,6 +120,45 @@ public class AccessFilter implements Filter {
                          contexto + "/login");
 
                return;
+          }
+
+          // Consultar o status atual do colaborador no banco
+          try {
+
+               ColaboradorDAO colaboradorDAO =
+                         new ColaboradorDAO();
+
+               Colaborador usuarioAtual =
+                         colaboradorDAO.buscarPorId(
+                                   usuarioLogado.getIdColaborador());
+
+               if (usuarioAtual == null
+                         || !usuarioAtual.isAtivo()
+                         || usuarioAtual.isExcluido()) {
+
+                    sessao.invalidate();
+
+                    httpResponse.sendRedirect(
+                              contexto + "/login");
+
+                    return;
+               }
+
+               usuarioLogado = usuarioAtual;
+
+               sessao.setAttribute(
+                         "usuarioLogado", usuarioAtual);
+
+               sessao.setAttribute(
+                         "nomeUsuario", usuarioAtual.getNome());
+
+               sessao.setAttribute(
+                         "nivelAcesso", usuarioAtual.getNivelAcesso());
+
+          } catch (SQLException e) {
+
+               throw new ServletException(
+                         "Erro ao verificar o status do colaborador.", e);
           }
 
           String nivelAcesso = usuarioLogado.getNivelAcesso();
@@ -238,6 +278,9 @@ public class AccessFilter implements Filter {
                     ||
                     caminho.equals(
                               "/dashboard.jsp")
+                    ||
+                    caminho.equals(
+                              "/dashboard")
                     ||
                     caminho.equals(
                               "/logout")

@@ -1,6 +1,13 @@
 package com.fastsplash.web.model;
 
+import java.time.LocalDateTime;
+
 public class Veiculo {
+
+    private boolean ativo = true;
+    private LocalDateTime excluidoEm;
+
+
 
     private int idVeiculo;
     private int idCliente;
@@ -74,5 +81,25 @@ public class Veiculo {
 
     public void setCor(String cor) {
         this.cor = cor;
+    }
+
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(boolean ativo) {
+        this.ativo = ativo;
+    }
+
+    public LocalDateTime getExcluidoEm() {
+        return excluidoEm;
+    }
+
+    public void setExcluidoEm(LocalDateTime excluidoEm) {
+        this.excluidoEm = excluidoEm;
+    }
+
+    public boolean isExcluido() {
+        return excluidoEm != null;
     }
 }

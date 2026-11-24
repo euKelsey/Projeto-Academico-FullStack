@@ -1,6 +1,7 @@
 package com.fastsplash.web.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,7 @@ public class Agendamento {
     private LocalTime horario;
 
     private String status;
+    private LocalDateTime arquivadoEm;
 
     private List<Integer> idsServicos =
             new ArrayList<>();
@@ -153,5 +155,17 @@ public class Agendamento {
 
         this.valorTotal =
                 valorTotal;
+    }
+
+    public LocalDateTime getArquivadoEm() {
+        return arquivadoEm;
+    }
+
+    public void setArquivadoEm(LocalDateTime arquivadoEm) {
+        this.arquivadoEm = arquivadoEm;
+    }
+
+    public boolean isArquivado() {
+        return arquivadoEm != null;
     }
 }

@@ -11,6 +11,7 @@ public class Atendimento {
 
     private LocalDateTime dataInicio;
     private LocalDateTime dataFim;
+    private LocalDateTime arquivadoEm;
 
     // Campos auxiliares para exibição
     private String clienteNome;
@@ -131,5 +132,17 @@ public class Atendimento {
 
         this.servicosDescricao =
                 servicosDescricao;
+    }
+
+    public LocalDateTime getArquivadoEm() {
+        return arquivadoEm;
+    }
+
+    public void setArquivadoEm(LocalDateTime arquivadoEm) {
+        this.arquivadoEm = arquivadoEm;
+    }
+
+    public boolean isArquivado() {
+        return arquivadoEm != null;
     }
 }

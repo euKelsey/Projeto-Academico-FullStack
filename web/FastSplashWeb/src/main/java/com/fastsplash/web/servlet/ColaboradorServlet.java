@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 
 import com.fastsplash.web.dao.ColaboradorDAO;
+import com.fastsplash.web.dao.ResultadoStatusColaborador;
 import com.fastsplash.web.model.Colaborador;
 
 import jakarta.servlet.ServletException;
@@ -13,6 +14,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/colaborador")
 public class ColaboradorServlet
@@ -34,6 +36,15 @@ public class ColaboradorServlet
             HttpServletRequest request,
             HttpServletResponse response
     ) throws ServletException, IOException {
+
+        if (!usuarioAdministrador(request)) {
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Acesso restrito a administradores.");
+            return;
+        }
+
+
 
         String acao =
                 request.getParameter("acao");
@@ -94,7 +105,9 @@ public class ColaboradorServlet
                         );
 
 
-                if (colaborador == null) {
+                if (colaborador == null
+                    || !colaborador.isAtivo()
+                    || colaborador.isExcluido()) {
 
                     response.sendError(
                             HttpServletResponse.SC_NOT_FOUND,
@@ -148,7 +161,9 @@ public class ColaboradorServlet
 
             request.setAttribute(
                     "colaboradores",
-                    colaboradorDAO.listarTodos()
+                    colaboradorDAO.listarPorStatus(
+                            normalizarFiltro(
+                                request.getParameter("filtro")))
             );
 
 
@@ -180,6 +195,15 @@ public class ColaboradorServlet
             HttpServletResponse response
     ) throws ServletException, IOException {
 
+        if (!usuarioAdministrador(request)) {
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Acesso restrito a administradores.");
+            return;
+        }
+
+
+
         request.setCharacterEncoding("UTF-8");
 
 
@@ -191,13 +215,12 @@ public class ColaboradorServlet
         // EXCLUIR
         // =====================================
 
-        if ("excluir".equals(acao)) {
+        if ("inativar".equals(acao)
+                || "reativar".equals(acao)
+                || "excluir".equals(acao)
+                || "restaurar".equals(acao)) {
 
-            excluir(
-                    request,
-                    response
-            );
-
+            processarStatus(request, response, acao);
             return;
         }
 
@@ -429,7 +452,9 @@ public class ColaboradorServlet
                     );
 
 
-            if (colaborador == null) {
+            if (colaborador == null
+                    || !colaborador.isAtivo()
+                    || colaborador.isExcluido()) {
 
                 response.sendError(
                         HttpServletResponse.SC_NOT_FOUND,
@@ -597,10 +622,26 @@ public class ColaboradorServlet
 
         } catch (SQLException e) {
 
+            if ("Nao e permitido alterar o nivel do ultimo administrador."
+                    .equals(e.getMessage())) {
+
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/colaborador?erro=ultimoAdministrador");
+                return;
+            }
+
+            if ("Colaborador indisponivel para edicao."
+                    .equals(e.getMessage())) {
+
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/colaborador?erro=operacaoInvalida");
+                return;
+            }
+
             throw new ServletException(
-                    "Erro ao atualizar colaborador.",
-                    e
-            );
+                    "Erro ao atualizar colaborador.", e);
         }
     }
 
@@ -609,57 +650,161 @@ public class ColaboradorServlet
     // EXCLUIR
     // =========================================
 
-    private void excluir(
+
+    private boolean usuarioAdministrador(
+            HttpServletRequest request
+    ) {
+
+        HttpSession sessao = request.getSession(false);
+
+        if (sessao == null) {
+            return false;
+        }
+
+        Object usuario = sessao.getAttribute("usuarioLogado");
+
+        return usuario instanceof Colaborador colaborador
+                && "ADMINISTRADOR".equals(
+                        colaborador.getNivelAcesso())
+                && colaborador.isAtivo()
+                && !colaborador.isExcluido();
+    }
+
+    private String normalizarFiltro(String filtro) {
+
+        if ("inativos".equals(filtro)
+                || "excluidos".equals(filtro)) {
+
+            return filtro;
+        }
+
+        return "ativos";
+    }
+
+    private void processarStatus(
             HttpServletRequest request,
-            HttpServletResponse response
+            HttpServletResponse response,
+            String acao
     ) throws ServletException, IOException {
 
-        String parametroId =
-                request.getParameter(
-                        "idColaborador"
-                );
+        if (!usuarioAdministrador(request)) {
 
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        Colaborador usuarioLogado =
+                (Colaborador) request.getSession(false)
+                        .getAttribute("usuarioLogado");
+
+        int idUsuarioLogado =
+                usuarioLogado.getIdColaborador();
+
+        int idColaborador;
 
         try {
 
-            int idColaborador =
-                    Integer.parseInt(
-                            parametroId
-                    );
+            idColaborador = Integer.parseInt(
+                    request.getParameter("idColaborador"));
 
-
-            colaboradorDAO.excluir(
-                    idColaborador
-            );
-
-
-            response.sendRedirect(
-                    request.getContextPath()
-                    + "/colaborador"
-            );
-
+            if (idColaborador <= 0) {
+                throw new NumberFormatException();
+            }
 
         } catch (NumberFormatException e) {
 
             response.sendError(
                     HttpServletResponse.SC_BAD_REQUEST,
-                    "ID do colaborador inválido."
-            );
+                    "ID do colaborador inválido.");
+            return;
+        }
 
+        String filtro = normalizarFiltro(
+                request.getParameter("filtro"));
+
+        try {
+
+            ResultadoStatusColaborador resultado =
+                    switch (acao) {
+
+                case "inativar" ->
+                    colaboradorDAO.inativarColaborador(
+                            idColaborador, idUsuarioLogado);
+
+                case "reativar" ->
+                    colaboradorDAO.reativarColaborador(
+                            idColaborador, idUsuarioLogado);
+
+                case "excluir" ->
+                    colaboradorDAO.excluirLogicamente(
+                            idColaborador, idUsuarioLogado);
+
+                case "restaurar" ->
+                    colaboradorDAO.restaurarColaborador(
+                            idColaborador, idUsuarioLogado);
+
+                default ->
+                    throw new SQLException("Acao invalida.");
+            };
+
+            String mensagem;
+
+            if (resultado == ResultadoStatusColaborador.SUCESSO) {
+
+                mensagem = "status=" + switch (acao) {
+
+                    case "inativar" -> "inativado";
+                    case "reativar" -> "reativado";
+                    case "excluir" -> "excluido";
+                    case "restaurar" -> "restaurado";
+                    default -> "sucesso";
+                };
+
+            } else {
+
+                mensagem = "erro=" + switch (resultado) {
+
+                    case ULTIMO_ADMINISTRADOR ->
+                        "ultimoAdministrador";
+
+                    case PROPRIO_USUARIO ->
+                        "proprioUsuario";
+
+                    case POSSUI_PENDENCIAS ->
+                        "pendencias";
+
+                    case COLABORADOR_NAO_ENCONTRADO ->
+                        "naoEncontrado";
+
+                    case JA_ATIVO ->
+                        "jaAtivo";
+
+                    case JA_INATIVO ->
+                        "jaInativo";
+
+                    case JA_EXCLUIDO ->
+                        "jaExcluido";
+
+                    case NAO_EXCLUIDO ->
+                        "naoExcluido";
+
+                    default ->
+                        "operacaoInvalida";
+                };
+            }
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/colaborador?filtro=" + filtro
+                    + "&" + mensagem);
 
         } catch (SQLException e) {
 
             throw new ServletException(
-                    "Erro ao excluir colaborador.",
-                    e
-            );
+                    "Erro ao alterar status do colaborador.", e);
         }
     }
-
-
-    // =========================================
-    // VALIDAÇÃO DO CADASTRO
-    // =========================================
 
     private String validarCadastro(
             String nome,

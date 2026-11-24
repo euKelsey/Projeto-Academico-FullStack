@@ -92,7 +92,7 @@ public class ServicoDAO {
                 String sql = """
                                 SELECT *
                                 FROM servico
-                                WHERE ativo = TRUE
+                                WHERE ativo = TRUE AND excluido_em IS NULL
                                 ORDER BY id_servico
                                 """;
 
@@ -154,9 +154,10 @@ public class ServicoDAO {
                                 UPDATE servico
                                 SET nome = ?,
                                     descricao = ?,
-                                    preco = ?,
-                                    ativo = ?
+                                    preco = ?
                                 WHERE id_servico = ?
+                                  AND ativo = TRUE
+                                  AND excluido_em IS NULL
                                 """;
 
                 try (
@@ -175,12 +176,8 @@ public class ServicoDAO {
                                         3,
                                         servico.getPreco());
 
-                        comando.setBoolean(
-                                        4,
-                                        servico.isAtivo());
-
                         comando.setInt(
-                                        5,
+                                        4,
                                         servico.getIdServico());
 
                         comando.executeUpdate();
@@ -214,51 +211,142 @@ public class ServicoDAO {
                 }
         }
 
-        // ATIVAR / INATIVAR SERVIÇO
-        public void alterarStatus(
-                        int idServico,
-                        boolean ativo) throws SQLException {
 
-                String sql = """
-                                                UPDATE servico
-                                                SET ativo = ?
-                                                WHERE id_servico = ?
+        public List<Servico> listarPorStatus(
+                String status
+        ) throws SQLException {
+
+                String filtro = switch (
+                        status == null ? "ativos" : status
+                ) {
+                        case "inativos" ->
+                            "ativo = FALSE AND excluido_em IS NULL";
+
+                        case "excluidos" ->
+                            "excluido_em IS NOT NULL";
+
+                        default ->
+                            "ativo = TRUE AND excluido_em IS NULL";
+                };
+
+                String sql = "SELECT * FROM servico WHERE "
+                        + filtro + " ORDER BY id_servico";
+
+                List<Servico> servicos = new ArrayList<>();
+
+                try (Connection conexao = Conexao.conectar();
+                     PreparedStatement comando =
+                             conexao.prepareStatement(sql);
+                     ResultSet resultado = comando.executeQuery()) {
+
+                        while (resultado.next()) {
+                                servicos.add(criarServico(resultado));
+                        }
+                }
+
+                return servicos;
+        }
+
+        private boolean executarStatus(
+                int idServico,
+                String acao
+        ) throws SQLException {
+
+                String sql = switch (acao) {
+
+                        case "inativar" -> """
+                                UPDATE servico
+                                SET ativo = FALSE
+                                WHERE id_servico = ?
+                                  AND ativo = TRUE
+                                  AND excluido_em IS NULL
                                 """;
 
-                try (
-                                Connection conexao = Conexao.conectar();
-                                PreparedStatement comando = conexao.prepareStatement(sql)) {
+                        case "reativar" -> """
+                                UPDATE servico
+                                SET ativo = TRUE
+                                WHERE id_servico = ?
+                                  AND ativo = FALSE
+                                  AND excluido_em IS NULL
+                                """;
 
-                        comando.setBoolean(
-                                        1,
-                                        ativo);
+                        case "excluir" -> """
+                                UPDATE servico
+                                SET ativo = FALSE,
+                                    excluido_em = CURRENT_TIMESTAMP
+                                WHERE id_servico = ?
+                                  AND excluido_em IS NULL
+                                """;
 
-                        comando.setInt(
-                                        2,
-                                        idServico);
+                        case "restaurar" -> """
+                                UPDATE servico
+                                SET ativo = TRUE,
+                                    excluido_em = NULL
+                                WHERE id_servico = ?
+                                  AND excluido_em IS NOT NULL
+                                """;
 
-                        comando.executeUpdate();
+                        default ->
+                            throw new SQLException("Acao invalida.");
+                };
+
+                try (Connection conexao = Conexao.conectar();
+                     PreparedStatement comando =
+                             conexao.prepareStatement(sql)) {
+
+                        comando.setInt(1, idServico);
+
+                        return comando.executeUpdate() == 1;
                 }
         }
 
-        // DELETE
+        public boolean inativarServico(
+                int idServico
+        ) throws SQLException {
+                return executarStatus(idServico, "inativar");
+        }
+
+        public boolean reativarServico(
+                int idServico
+        ) throws SQLException {
+                return executarStatus(idServico, "reativar");
+        }
+
+        public boolean excluirLogicamente(
+                int idServico
+        ) throws SQLException {
+                return executarStatus(idServico, "excluir");
+        }
+
+        public boolean restaurarServico(
+                int idServico
+        ) throws SQLException {
+                return executarStatus(idServico, "restaurar");
+        }
+
+        // Compatibilidade com chamadas existentes
+        public void alterarStatus(
+                int idServico,
+                boolean ativo
+        ) throws SQLException {
+
+                boolean sucesso = ativo
+                        ? reativarServico(idServico)
+                        : inativarServico(idServico);
+
+                if (!sucesso) {
+                        throw new SQLException(
+                                "Nao foi possivel alterar o status.");
+                }
+        }
+
         public void excluir(
-                        int idServico) throws SQLException {
+                int idServico
+        ) throws SQLException {
 
-                String sql = """
-                                DELETE FROM servico
-                                WHERE id_servico = ?
-                                """;
-
-                try (
-                                Connection conexao = Conexao.conectar();
-                                PreparedStatement comando = conexao.prepareStatement(sql)) {
-
-                        comando.setInt(
-                                        1,
-                                        idServico);
-
-                        comando.executeUpdate();
+                if (!excluirLogicamente(idServico)) {
+                        throw new SQLException(
+                                "Nao foi possivel excluir o servico.");
                 }
         }
 
@@ -287,6 +375,13 @@ public class ServicoDAO {
                 servico.setAtivo(
                                 resultado.getBoolean(
                                                 "ativo"));
+
+                servico.setExcluidoEm(
+                        resultado.getObject(
+                                "excluido_em",
+                                java.time.LocalDateTime.class
+                        )
+                );
 
                 return servico;
         }

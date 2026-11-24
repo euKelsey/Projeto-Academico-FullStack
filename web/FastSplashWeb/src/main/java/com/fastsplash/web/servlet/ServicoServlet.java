@@ -2,9 +2,7 @@ package com.fastsplash.web.servlet;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.fastsplash.web.dao.ServicoDAO;
 import com.fastsplash.web.model.Servico;
@@ -14,6 +12,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/servico")
 public class ServicoServlet extends HttpServlet {
@@ -58,7 +57,7 @@ public class ServicoServlet extends HttpServlet {
                                                 servicoDAO.buscarPorId(
                                                                 idServico);
 
-                                if (servico == null) {
+                                if (servico == null || !servico.isAtivo() || servico.isExcluido()) {
 
                                         response.sendError(
                                                         HttpServletResponse.SC_NOT_FOUND,
@@ -90,30 +89,22 @@ public class ServicoServlet extends HttpServlet {
                 // LISTAR SERVIÇOS
                 try {
 
-                        List<Servico> servicos =
-                                        servicoDAO.listarTodos();
+                        String filtro = normalizarFiltro(
+                                request.getParameter("filtro"));
 
-                        Map<Integer, Boolean> servicosEmUso =
-                                        new HashMap<>();
+                        if (!"ativos".equals(filtro)
+                                && !usuarioAdministrador(request)) {
 
-                        for (Servico servico : servicos) {
-
-                                boolean emUso =
-                                                servicoDAO.possuiAgendamentos(
-                                                                servico.getIdServico());
-
-                                servicosEmUso.put(
-                                                servico.getIdServico(),
-                                                emUso);
+                                response.sendError(
+                                        HttpServletResponse.SC_FORBIDDEN);
+                                return;
                         }
 
-                        request.setAttribute(
-                                        "servicos",
-                                        servicos);
+                        List<Servico> servicos =
+                                servicoDAO.listarPorStatus(filtro);
 
-                        request.setAttribute(
-                                        "servicosEmUso",
-                                        servicosEmUso);
+                        request.setAttribute("filtro", filtro);
+                        request.setAttribute("servicos", servicos);
 
                         request.getRequestDispatcher(
                                         "/lista-servicos.jsp")
@@ -174,7 +165,7 @@ public class ServicoServlet extends HttpServlet {
                                                 servicoDAO.buscarPorId(
                                                                 idServico);
 
-                                if (servico == null) {
+                                if (servico == null || !servico.isAtivo() || servico.isExcluido()) {
 
                                         response.sendError(
                                                         HttpServletResponse.SC_NOT_FOUND,
@@ -213,101 +204,13 @@ public class ServicoServlet extends HttpServlet {
                 // INATIVAR SERVIÇO
                 // =========================================
 
-                if ("inativar".equals(acao)) {
+                if ("inativar".equals(acao)
+                                || "ativar".equals(acao)
+                                || "reativar".equals(acao)
+                                || "excluir".equals(acao)
+                                || "restaurar".equals(acao)) {
 
-                        int idServico =
-                                        Integer.parseInt(
-                                                        request.getParameter(
-                                                                        "idServico"));
-
-                        try {
-
-                                servicoDAO.alterarStatus(
-                                                idServico,
-                                                false);
-
-                                response.sendRedirect(
-                                                request.getContextPath()
-                                                                + "/servico?sucesso=inativado");
-
-                        } catch (SQLException e) {
-
-                                throw new ServletException(
-                                                "Erro ao inativar serviço.",
-                                                e);
-                        }
-
-                        return;
-                }
-
-                // =========================================
-                // ATIVAR SERVIÇO
-                // =========================================
-
-                if ("ativar".equals(acao)) {
-
-                        int idServico =
-                                        Integer.parseInt(
-                                                        request.getParameter(
-                                                                        "idServico"));
-
-                        try {
-
-                                servicoDAO.alterarStatus(
-                                                idServico,
-                                                true);
-
-                                response.sendRedirect(
-                                                request.getContextPath()
-                                                                + "/servico?sucesso=ativado");
-
-                        } catch (SQLException e) {
-
-                                throw new ServletException(
-                                                "Erro ao ativar serviço.",
-                                                e);
-                        }
-
-                        return;
-                }
-
-                // =========================================
-                // EXCLUIR SERVIÇO
-                // =========================================
-
-                if ("excluir".equals(acao)) {
-
-                        int idServico =
-                                        Integer.parseInt(
-                                                        request.getParameter(
-                                                                        "idServico"));
-
-                        try {
-
-                                if (servicoDAO.possuiAgendamentos(
-                                                idServico)) {
-
-                                        response.sendRedirect(
-                                                        request.getContextPath()
-                                                                        + "/servico?erro=servicoEmUso");
-
-                                        return;
-                                }
-
-                                servicoDAO.excluir(
-                                                idServico);
-
-                                response.sendRedirect(
-                                                request.getContextPath()
-                                                                + "/servico?sucesso=excluido");
-
-                        } catch (SQLException e) {
-
-                                throw new ServletException(
-                                                "Erro ao excluir serviço.",
-                                                e);
-                        }
-
+                        processarStatus(request, response, acao);
                         return;
                 }
 
@@ -359,4 +262,112 @@ public class ServicoServlet extends HttpServlet {
                                         e);
                 }
         }
+
+        private boolean usuarioAdministrador(
+                HttpServletRequest request
+        ) {
+
+                HttpSession sessao = request.getSession(false);
+
+                return sessao != null
+                        && "ADMINISTRADOR".equals(
+                                sessao.getAttribute("nivelAcesso"));
+        }
+
+        private String normalizarFiltro(String filtro) {
+
+                if ("inativos".equals(filtro)
+                        || "excluidos".equals(filtro)) {
+                        return filtro;
+                }
+
+                return "ativos";
+        }
+
+        private void processarStatus(
+                HttpServletRequest request,
+                HttpServletResponse response,
+                String acao
+        ) throws ServletException, IOException {
+
+                if (!usuarioAdministrador(request)) {
+
+                        response.sendError(
+                                HttpServletResponse.SC_FORBIDDEN,
+                                "Apenas administradores podem alterar o status dos serviços.");
+                        return;
+                }
+
+                int idServico;
+
+                try {
+
+                        idServico = Integer.parseInt(
+                                request.getParameter("idServico"));
+
+                        if (idServico <= 0) {
+                                throw new NumberFormatException();
+                        }
+
+                } catch (NumberFormatException e) {
+
+                        response.sendError(
+                                HttpServletResponse.SC_BAD_REQUEST,
+                                "ID do serviço inválido.");
+                        return;
+                }
+
+                String filtro = normalizarFiltro(
+                        request.getParameter("filtro"));
+
+                try {
+
+                        boolean sucesso = switch (acao) {
+
+                                case "inativar" ->
+                                    servicoDAO.inativarServico(idServico);
+
+                                case "ativar", "reativar" ->
+                                    servicoDAO.reativarServico(idServico);
+
+                                case "excluir" ->
+                                    servicoDAO.excluirLogicamente(idServico);
+
+                                case "restaurar" ->
+                                    servicoDAO.restaurarServico(idServico);
+
+                                default ->
+                                    false;
+                        };
+
+                        String mensagem;
+
+                        if (sucesso) {
+
+                                mensagem = "status=" + switch (acao) {
+
+                                        case "inativar" -> "inativado";
+                                        case "ativar", "reativar" -> "reativado";
+                                        case "excluir" -> "excluido";
+                                        case "restaurar" -> "restaurado";
+                                        default -> "sucesso";
+                                };
+
+                        } else {
+
+                                mensagem = "erro=operacaoInvalida";
+                        }
+
+                        response.sendRedirect(
+                                request.getContextPath()
+                                + "/servico?filtro=" + filtro
+                                + "&" + mensagem);
+
+                } catch (SQLException e) {
+
+                        throw new ServletException(
+                                "Erro ao alterar status do serviço.", e);
+                }
+        }
+
 }

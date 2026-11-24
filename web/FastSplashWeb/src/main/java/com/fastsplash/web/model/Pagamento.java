@@ -10,6 +10,7 @@ public class Pagamento {
     private int idAgendamento;
 
     private LocalDateTime dataPagamento;
+    private LocalDateTime arquivadoEm;
 
     private double valor;
 
@@ -144,5 +145,17 @@ public class Pagamento {
             LocalTime horarioAgendamento
     ) {
         this.horarioAgendamento = horarioAgendamento;
+    }
+
+    public LocalDateTime getArquivadoEm() {
+        return arquivadoEm;
+    }
+
+    public void setArquivadoEm(LocalDateTime arquivadoEm) {
+        this.arquivadoEm = arquivadoEm;
+    }
+
+    public boolean isArquivado() {
+        return arquivadoEm != null;
     }
 }

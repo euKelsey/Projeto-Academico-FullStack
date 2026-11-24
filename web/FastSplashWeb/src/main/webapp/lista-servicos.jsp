@@ -1,29 +1,45 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
     <%@ page import="java.util.List" %>
-        <%@ page import="java.util.Map" %>
+
             <%@ page import="com.fastsplash.web.model.Servico" %>
 
-                <% List<Servico> servicos =
-                    (List<Servico>) request.getAttribute(
-                        "servicos"
-                        );
 
-                        Map<Integer, Boolean> servicosEmUso =
-                            (Map<Integer, Boolean>) request.getAttribute(
-                                "servicosEmUso"
-                                );
+<%
+    List<Servico> servicos =
+        (List<Servico>) request.getAttribute("servicos");
 
-                                String erro =
-                                request.getParameter(
-                                "erro"
-                                );
+    String filtro = (String) request.getAttribute("filtro");
 
-                                String sucesso =
-                                request.getParameter(
-                                "sucesso"
-                                );
-                                %>
+    if (!"inativos".equals(filtro)
+            && !"excluidos".equals(filtro)) {
+        filtro = "ativos";
+    }
+
+    boolean administrador =
+        "ADMINISTRADOR".equals(
+            session.getAttribute("nivelAcesso")
+        );
+
+    String status = request.getParameter("status");
+    String erro = request.getParameter("erro");
+
+    String mensagemSucesso = switch (
+        status == null ? "" : status
+    ) {
+        case "inativado" -> "Serviço inativado com sucesso.";
+        case "reativado" -> "Serviço reativado com sucesso.";
+        case "excluido" -> "Serviço excluído com sucesso. Histórico preservado.";
+        case "restaurado" -> "Serviço restaurado com sucesso.";
+        default -> "";
+    };
+
+    String mensagemErro =
+        "operacaoInvalida".equals(erro)
+        ? "Não foi possível alterar o status deste serviço."
+        : "";
+%>
+
 
                                 <!DOCTYPE html>
 
@@ -44,52 +60,79 @@
 
                                     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/servicos.css">
 
-                                </head>
+                                <style>
+    .filtros-clientes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 20px;
+    }
 
-                                <body class="pagina-interna">
+    .filtro-cliente {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 18px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+        font-weight: 600;
+        transition: 0.2s;
+    }
 
-                                    <header class="interna-topo">
+    .filtro-cliente:hover {
+        border-color: #f97316;
+    }
 
-                                        <div class="container interna-topo-conteudo">
+    .filtro-selecionado {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: #ffffff;
+    }
 
-                                            <div class="marca-cabecalho">
+    .aviso-sucesso-cliente {
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        background: #f0fdf4;
+        color: #166534;
+    }
 
-                                                <div class="marca-nome">
+    .acoes-tabela {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
 
-                                                    <span class="marca-fast">
-                                                        Fast
-                                                    </span>
+    .acoes-tabela form {
+        margin: 0;
+    }
 
-                                                    <span class="marca-splash">
-                                                        Splash
-                                                    </span>
+    .acao-status-cliente {
+        cursor: pointer;
+        padding: 7px 12px;
+        border: 1px solid currentColor;
+        border-radius: 6px;
+        font-weight: 600;
+        background: transparent;
+    }
 
-                                                </div>
+    .acao-inativar-cliente {
+        color: #b45309;
+    }
 
-                                                <span class="marca-subtitulo">
-                                                    GESTÃO
-                                                </span>
+    .acao-reativar-cliente {
+        color: #15803d;
+    }
+</style>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/menu-lateral.css">
+</head>
 
-                                            </div>
+                                <body class="pagina-interna fs-layout">
+<jsp:include page="/WEB-INF/includes/menu-lateral.jsp" />
 
 
-                                            <div class="interna-topo-acoes">
 
-                                                <a class="interna-link"
-                                                    href="${pageContext.request.contextPath}/dashboard.jsp">
-                                                    ← Dashboard
-                                                </a>
-
-                                                <a class="interna-link"
-                                                    href="${pageContext.request.contextPath}/logout">
-                                                    Sair
-                                                </a>
-
-                                            </div>
-
-                                        </div>
-
-                                    </header>
 
 
                                     <main class="interna-principal">
@@ -124,52 +167,51 @@
                                             </section>
 
 
-                                            <% if ("servicoEmUso".equals(erro)) { %>
 
-                                                <div class="aviso-interno">
+<% if (!mensagemSucesso.isEmpty()) { %>
+    <div class="aviso-sucesso-cliente" role="status">
+        <strong><%= mensagemSucesso %></strong>
+    </div>
+<% } %>
 
-                                                    Este serviço não pode ser excluído porque
-                                                    já está vinculado a um ou mais agendamentos.
+<% if (!mensagemErro.isEmpty()) { %>
+    <div class="aviso-interno" role="alert">
+        <strong><%= mensagemErro %></strong>
+    </div>
+<% } %>
 
-                                                </div>
+<section class="tabela-card">
+<nav class="filtros-clientes" aria-label="Status dos serviços">
 
-                                                <% } %>
+        <a class="filtro-cliente <%= "ativos".equals(filtro) ? "filtro-selecionado" : "" %>"
+           href="${pageContext.request.contextPath}/servico?filtro=ativos">
+            Ativos
+        </a>
 
+        <% if (administrador) { %>
 
-                                                    <% if ("excluido".equals(sucesso)) { %>
+        <a class="filtro-cliente <%= "inativos".equals(filtro) ? "filtro-selecionado" : "" %>"
+           href="${pageContext.request.contextPath}/servico?filtro=inativos">
+            Inativos
+        </a>
 
-                                                        <div class="mensagem-interna-sucesso">
+        <a class="filtro-cliente <%= "excluidos".equals(filtro) ? "filtro-selecionado" : "" %>"
+           href="${pageContext.request.contextPath}/servico?filtro=excluidos">
+            Excluídos
+        </a>
 
-                                                            Serviço excluído com sucesso.
+        <% } %>
 
-                                                        </div>
+    </nav>
+<div class="tabela-pesquisa">
 
-                                                        <% } %>
+                                                <input class="tabela-pesquisa-campo" type="search" id="pesquisaTabela"
+                                                    placeholder="Pesquisar na tabela..." autocomplete="off">
 
+                                                <span class="tabela-pesquisa-resultado" id="resultadoPesquisa">
+                                                </span>
 
-                                                            <% if ("inativado".equals(sucesso)) { %>
-
-                                                                <div class="mensagem-interna-sucesso">
-
-                                                                    Serviço inativado com sucesso.
-
-                                                                </div>
-
-                                                                <% } %>
-
-
-                                                                    <% if ("ativado".equals(sucesso)) { %>
-
-                                                                        <div class="mensagem-interna-sucesso">
-
-                                                                            Serviço ativado com sucesso.
-
-                                                                        </div>
-
-                                                                        <% } %>
-
-
-                                                                            <section class="tabela-card">
+                                            </div>
 
                                                                                 <div class="tabela-responsiva">
 
@@ -212,15 +254,7 @@
                                                                                             <tbody>
 
 
-                                                                                                <% for ( Servico servico
-                                                                                                    : servicos ) {
-                                                                                                    boolean
-                                                                                                    servicoEmUso=servicosEmUso
-                                                                                                    !=null &&
-                                                                                                    Boolean.TRUE.equals(
-                                                                                                    servicosEmUso.get(
-                                                                                                    servico.getIdServico()
-                                                                                                    ) ); %>
+                                                                                                <% for (Servico servico : servicos) { %>
 
 
                                                                                                     <% String
@@ -301,141 +335,106 @@
 
                                                                                                             <td>
 
-                                                                                                                <% if
-                                                                                                                    (servico.isAtivo())
-                                                                                                                    { %>
-
-                                                                                                                    <span>
-                                                                                                                        Ativo
-                                                                                                                    </span>
-
-                                                                                                                    <% } else
-                                                                                                                        {
-                                                                                                                        %>
-
-                                                                                                                        <span>
-                                                                                                                            Inativo
-                                                                                                                        </span>
-
-                                                                                                                        <% }
-                                                                                                                            %>
+                                                                                                                <span>
+        <%= servico.isExcluido()
+            ? "Excluído"
+            : servico.isAtivo()
+                ? "Ativo"
+                : "Inativo" %>
+    </span>
 
                                                                                                             </td>
 
 
                                                                                                             <td>
 
-                                                                                                                <div
-                                                                                                                    class="acoes-tabela">
+                                                                                                                <div class="acoes-tabela">
 
+    <% if ("ativos".equals(filtro)) { %>
 
-                                                                                                                    <a class="acao-editar"
-                                                                                                                        href="${pageContext.request.contextPath}/servico?acao=editar&idServico=<%= servico.getIdServico() %>">
-                                                                                                                        Editar
-                                                                                                                    </a>
+        <a class="acao-editar"
+           href="${pageContext.request.contextPath}/servico?acao=editar&idServico=<%= servico.getIdServico() %>">
+            Editar
+        </a>
 
+        <% if (administrador) { %>
 
-                                                                                                                    <% if
-                                                                                                                        (servicoEmUso)
-                                                                                                                        {
-                                                                                                                        %>
+        <form action="${pageContext.request.contextPath}/servico"
+              method="post"
+              onsubmit="return confirm('Deseja inativar este serviço?');">
 
+            <input type="hidden" name="acao" value="inativar">
+            <input type="hidden" name="filtro" value="ativos">
+            <input type="hidden" name="idServico" value="<%= servico.getIdServico() %>">
 
-                                                                                                                        <% if
-                                                                                                                            (servico.isAtivo())
-                                                                                                                            {
-                                                                                                                            %>
+            <button type="submit"
+                    class="acao-status-cliente acao-inativar-cliente">
+                Inativar
+            </button>
 
-                                                                                                                            <form
-                                                                                                                                action="${pageContext.request.contextPath}/servico"
-                                                                                                                                method="post">
+        </form>
 
-                                                                                                                                <input
-                                                                                                                                    type="hidden"
-                                                                                                                                    name="acao"
-                                                                                                                                    value="inativar">
+        <% } %>
 
-                                                                                                                                <input
-                                                                                                                                    type="hidden"
-                                                                                                                                    name="idServico"
-                                                                                                                                    value="<%= servico.getIdServico() %>">
+    <% } %>
 
-                                                                                                                                <button
-                                                                                                                                    class="acao-editar"
-                                                                                                                                    type="submit"
-                                                                                                                                    onclick="return confirm('Deseja realmente inativar este serviço?');">
-                                                                                                                                    Inativar
-                                                                                                                                </button>
+    <% if (administrador && "inativos".equals(filtro)) { %>
 
-                                                                                                                            </form>
+        <form action="${pageContext.request.contextPath}/servico"
+              method="post"
+              onsubmit="return confirm('Deseja reativar este serviço?');">
 
+            <input type="hidden" name="acao" value="reativar">
+            <input type="hidden" name="filtro" value="inativos">
+            <input type="hidden" name="idServico" value="<%= servico.getIdServico() %>">
 
-                                                                                                                            <% } else
-                                                                                                                                {
-                                                                                                                                %>
+            <button type="submit"
+                    class="acao-status-cliente acao-reativar-cliente">
+                Reativar
+            </button>
 
+        </form>
 
-                                                                                                                                <form
-                                                                                                                                    action="${pageContext.request.contextPath}/servico"
-                                                                                                                                    method="post">
+    <% } %>
 
-                                                                                                                                    <input
-                                                                                                                                        type="hidden"
-                                                                                                                                        name="acao"
-                                                                                                                                        value="ativar">
+    <% if (administrador && !"excluidos".equals(filtro)) { %>
 
-                                                                                                                                    <input
-                                                                                                                                        type="hidden"
-                                                                                                                                        name="idServico"
-                                                                                                                                        value="<%= servico.getIdServico() %>">
+        <form action="${pageContext.request.contextPath}/servico"
+              method="post"
+              onsubmit="return confirm('Deseja excluir este serviço? O historico sera preservado.');">
 
-                                                                                                                                    <button
-                                                                                                                                        class="acao-editar"
-                                                                                                                                        type="submit">
-                                                                                                                                        Ativar
-                                                                                                                                    </button>
+            <input type="hidden" name="acao" value="excluir">
+            <input type="hidden" name="filtro" value="<%= filtro %>">
+            <input type="hidden" name="idServico" value="<%= servico.getIdServico() %>">
 
-                                                                                                                                </form>
+            <button class="acao-excluir" type="submit">
+                Excluir
+            </button>
 
+        </form>
 
-                                                                                                                                <% }
-                                                                                                                                    %>
+    <% } %>
 
+    <% if (administrador && "excluidos".equals(filtro)) { %>
 
-                                                                                                                                    <% } else
-                                                                                                                                        {
-                                                                                                                                        %>
+        <form action="${pageContext.request.contextPath}/servico"
+              method="post"
+              onsubmit="return confirm('Deseja restaurar este serviço?');">
 
+            <input type="hidden" name="acao" value="restaurar">
+            <input type="hidden" name="filtro" value="excluidos">
+            <input type="hidden" name="idServico" value="<%= servico.getIdServico() %>">
 
-                                                                                                                                        <form
-                                                                                                                                            action="${pageContext.request.contextPath}/servico"
-                                                                                                                                            method="post">
+            <button type="submit"
+                    class="acao-status-cliente acao-reativar-cliente">
+                Restaurar
+            </button>
 
-                                                                                                                                            <input
-                                                                                                                                                type="hidden"
-                                                                                                                                                name="acao"
-                                                                                                                                                value="excluir">
+        </form>
 
-                                                                                                                                            <input
-                                                                                                                                                type="hidden"
-                                                                                                                                                name="idServico"
-                                                                                                                                                value="<%= servico.getIdServico() %>">
+    <% } %>
 
-                                                                                                                                            <button
-                                                                                                                                                class="acao-excluir"
-                                                                                                                                                type="submit"
-                                                                                                                                                onclick="return confirm('Deseja realmente excluir este serviço?');">
-                                                                                                                                                Excluir
-                                                                                                                                            </button>
-
-                                                                                                                                        </form>
-
-
-                                                                                                                                        <% }
-                                                                                                                                            %>
-
-
-                                                                                                                </div>
+</div>
 
                                                                                                             </td>
 
@@ -455,8 +454,7 @@
 
                                                                                             <div class="estado-vazio">
 
-                                                                                                Nenhum serviço
-                                                                                                cadastrado.
+                                                                                                Nenhum serviço encontrado nesta categoria.
 
                                                                                             </div>
 
@@ -472,6 +470,88 @@
 
                                     </main>
 
-                                </body>
+                                <script>
+
+                            const pesquisaTabela =
+                                document.getElementById(
+                                    "pesquisaTabela"
+                                );
+
+                            const resultadoPesquisa =
+                                document.getElementById(
+                                    "resultadoPesquisa"
+                                );
+
+
+                            if (pesquisaTabela) {
+
+                                pesquisaTabela.addEventListener(
+                                    "input",
+                                    function () {
+
+                                        const termo =
+                                            pesquisaTabela
+                                                .value
+                                                .toLowerCase()
+                                                .trim();
+
+                                        const linhas =
+                                            document.querySelectorAll(
+                                                ".tabela-interna tbody tr"
+                                            );
+
+                                        let encontrados = 0;
+
+
+                                        linhas.forEach(
+                                            function (linha) {
+
+                                                const textoLinha =
+                                                    linha
+                                                        .innerText
+                                                        .toLowerCase();
+
+                                                const encontrou =
+                                                    textoLinha.includes(
+                                                        termo
+                                                    );
+
+
+                                                linha.style.display =
+                                                    encontrou
+                                                        ? ""
+                                                        : "none";
+
+
+                                                if (encontrou) {
+                                                    encontrados++;
+                                                }
+
+                                            }
+                                        );
+
+
+                                        if (termo === "") {
+
+                                            resultadoPesquisa.textContent =
+                                                "";
+
+                                        } else {
+
+                                            resultadoPesquisa.textContent =
+                                                encontrados === 1
+                                                    ? "1 resultado encontrado"
+                                                    : encontrados
+                                                    + " resultados encontrados";
+                                        }
+
+                                    }
+                                );
+
+                            }
+
+                        </script>
+<script src="${pageContext.request.contextPath}/js/menu-lateral.js"></script>
+</body>
 
                                 </html>

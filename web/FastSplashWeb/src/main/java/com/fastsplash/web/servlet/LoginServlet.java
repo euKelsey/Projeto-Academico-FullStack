@@ -30,6 +30,27 @@ public class LoginServlet extends HttpServlet {
             HttpServletResponse response
     ) throws ServletException, IOException {
 
+        HttpSession sessao = request.getSession(false);
+
+        if (sessao != null
+                && sessao.getAttribute("usuarioLogado")
+                    instanceof Colaborador) {
+
+            Object nivel = sessao.getAttribute("nivelAcesso");
+
+            if ("ADMINISTRADOR".equals(nivel)
+                    || "ATENDENTE".equals(nivel)) {
+
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/dashboard");
+
+                return;
+            }
+        }
+
+
+
         request.getRequestDispatcher(
                 "/login.jsp"
         ).forward(
@@ -93,7 +114,9 @@ public class LoginServlet extends HttpServlet {
                     );
 
 
-            if (colaborador == null) {
+            if (colaborador == null
+                    || !colaborador.isAtivo()
+                    || colaborador.isExcluido()) {
 
                 loginInvalido(
                         request,
@@ -201,7 +224,7 @@ public class LoginServlet extends HttpServlet {
 
             response.sendRedirect(
                     request.getContextPath()
-                    + "/dashboard.jsp"
+                    + "/dashboard"
             );
 
 

@@ -1,0 +1,287 @@
+/* FAST SPLASH - NAVEGACAO ADMINISTRATIVA */
+
+body.fs-layout {
+    --fs-menu-largura: 235px;
+
+    padding-left: var(--fs-menu-largura);
+    box-sizing: border-box;
+
+    transition: padding-left 0.2s ease;
+}
+
+.fs-menu {
+    position: fixed;
+    inset: 0 auto 0 0;
+
+    width: var(--fs-menu-largura);
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    background: #121c27;
+
+    border-right: 1px solid rgba(255,255,255,0.08);
+
+    z-index: 1200;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    box-sizing: border-box;
+
+    transition: width 0.2s ease;
+}
+
+.fs-menu-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    min-height: 80px;
+
+    padding: 14px 16px;
+
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.fs-menu-marca {
+    text-decoration: none;
+    font-size: 23px;
+    font-weight: 900;
+
+    white-space: nowrap;
+}
+
+.fs-menu-fast {
+    color: #18c8ff;
+}
+
+.fs-menu-splash {
+    color: #ff791d;
+}
+
+.fs-menu-marca small {
+    display: block;
+
+    margin-top: 3px;
+
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #8597aa;
+}
+
+.fs-menu-toggle {
+    min-width: 34px;
+    height: 34px;
+
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+
+    border-radius: 8px;
+
+    color: #c5d3df;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.fs-menu-toggle:hover {
+    color: #18c8ff;
+    border-color: #18c8ff;
+}
+
+.fs-menu-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    padding: 18px 12px;
+}
+
+.fs-menu-legenda {
+    color: #8193a6;
+
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+
+    margin: 0 8px 10px;
+    white-space: nowrap;
+}
+
+.fs-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    min-height: 44px;
+
+    padding: 10px 12px;
+
+    border: 1px solid transparent;
+    border-radius: 9px;
+
+    box-sizing: border-box;
+
+    color: #b9c9d9;
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    transition: background 0.15s ease;
+}
+
+.fs-menu-item:hover {
+    background: rgba(24,200,255,0.07);
+    color: #18c8ff;
+}
+
+.fs-menu-item.fs-menu-ativo {
+    background: #e96112;
+    color: #ffffff;
+
+    border-color: #ff791d;
+}
+
+.fs-menu-icone {
+    width: 24px;
+    flex-shrink: 0;
+
+    text-align: center;
+    font-size: 17px;
+}
+
+.fs-menu-rodape {
+    margin-top: auto;
+
+    padding: 14px 12px;
+
+    border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.fs-menu-perfil {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 10px 12px 16px;
+
+    color: #e0e8ef;
+    font-size: 13px;
+}
+
+.fs-menu-perfil small {
+    display: block;
+
+    color: #8597aa;
+    font-size: 11px;
+
+    margin-top: 4px;
+}
+
+.fs-menu-sair {
+    color: #ff9e9e;
+}
+
+/* Menu recolhido */
+
+body.fs-layout.fs-menu-recolhido {
+    --fs-menu-largura: 72px;
+}
+
+.fs-menu-recolhido .fs-menu-texto,
+.fs-menu-recolhido .fs-menu-legenda,
+.fs-menu-recolhido .fs-menu-marca {
+    display: none;
+}
+
+.fs-menu-recolhido .fs-menu-topo {
+    justify-content: center;
+}
+
+.fs-menu-recolhido .fs-menu-item,
+.fs-menu-recolhido .fs-menu-perfil {
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.fs-layout .tabela-responsiva {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.fs-layout .interna-principal,
+.fs-layout .dashboard-principal {
+    min-width: 0;
+}
+
+/* Notebooks */
+
+@media (max-width: 1200px) {
+    body.fs-layout {
+        --fs-menu-largura: 205px;
+    }
+}
+
+/* Telas menores */
+
+@media (max-width: 760px) {
+
+    body.fs-layout,
+    body.fs-layout.fs-menu-recolhido {
+        padding-left: 0;
+    }
+
+    .fs-menu {
+        position: relative;
+
+        width: 100%;
+        height: auto;
+
+        overflow: visible;
+    }
+
+    .fs-menu-topo {
+        min-height: 64px;
+    }
+
+    .fs-menu-recolhido .fs-menu-marca {
+        display: block;
+    }
+
+    .fs-menu-recolhido .fs-menu-topo {
+        justify-content: space-between;
+    }
+
+    .fs-menu-recolhido .fs-menu-nav,
+    .fs-menu-recolhido .fs-menu-rodape {
+        display: none;
+    }
+
+    .fs-menu-nav {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .fs-menu-legenda {
+        grid-column: 1 / -1;
+    }
+
+    .fs-layout .interna-topo,
+    .fs-layout .dashboard-topo {
+        position: relative;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.fs-layout,
+    .fs-menu {
+        transition: none;
+    }
+}

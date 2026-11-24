@@ -1,322 +1,407 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="com.fastsplash.web.model.Dashboard" %>
+<%@ page import="java.text.NumberFormat" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.util.Locale" %>
+<%@ page import="java.math.BigDecimal" %>
+<%@ page import="java.math.RoundingMode" %>
 
-    <% String nomeUsuario=(String) session.getAttribute( "nomeUsuario" ); String nivelAcesso=(String)
-        session.getAttribute( "nivelAcesso" ); if (nomeUsuario==null) { nomeUsuario="Colaborador" ; } if
-        (nivelAcesso==null) { nivelAcesso="" ; } boolean administrador="ADMINISTRADOR" .equals( nivelAcesso ); %>
+<%!
+    private String escapar(String texto) {
+        if (texto == null) return "";
 
-        <!DOCTYPE html>
+        return texto.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&#39;");
+    }
+%>
 
-        <html lang="pt-BR">
+<%
+    Dashboard dados =
+        (Dashboard) request.getAttribute("dashboard");
 
-        <head>
+    if (dados == null) {
+        response.sendRedirect(
+            request.getContextPath() + "/dashboard");
+        return;
+    }
 
-            <meta charset="UTF-8">
+    String nomeUsuario =
+        (String) session.getAttribute("nomeUsuario");
 
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    boolean administrador =
+        "ADMINISTRADOR".equals(
+            session.getAttribute("nivelAcesso"));
 
-            <title>Dashboard | Fast Splash</title>
+    Locale brasil = Locale.forLanguageTag("pt-BR");
 
-            <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site.css">
+    NumberFormat moeda =
+        NumberFormat.getCurrencyInstance(brasil);
 
-            <link rel="stylesheet" href="${pageContext.request.contextPath}/css/interno.css">
+    DateTimeFormatter formatoData =
+        DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-            <link rel="stylesheet" href="${pageContext.request.contextPath}/css/dashboard.css">
+    DateTimeFormatter formatoHora =
+        DateTimeFormatter.ofPattern("HH:mm");
 
-        </head>
+    DateTimeFormatter formatoMes =
+        DateTimeFormatter.ofPattern("MMM/yy", brasil);
 
+    BigDecimal maiorValor =
+        dados.faturamentoHistorico().stream()
+            .map(Dashboard.FaturamentoMes::valor)
+            .max(BigDecimal::compareTo)
+            .orElse(BigDecimal.ZERO);
 
-        <body class="pagina-dashboard">
+    long totalAtendimentos =
+        dados.atendimentosAguardando()
+        + dados.atendimentosEmLavagem()
+        + dados.atendimentosFinalizados();
+%>
 
+<!DOCTYPE html>
+<html lang="pt-BR">
 
-            <!-- =========================================
-         TOPO DO PAINEL
-    ========================================== -->
+<head>
 
-            <header class="dashboard-topo">
+    <meta charset="UTF-8">
 
-                <div class="container dashboard-topo-conteudo">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-                    <div class="marca-cabecalho">
+    <title>Dashboard | Fast Splash</title>
 
-                        <div class="marca-nome">
+    <link rel="stylesheet"
+          href="${pageContext.request.contextPath}/css/site.css">
 
-                            <span class="marca-fast">
-                                Fast
-                            </span>
+    <link rel="stylesheet"
+          href="${pageContext.request.contextPath}/css/interno.css">
 
-                            <span class="marca-splash">
-                                Splash
-                            </span>
+    <link rel="stylesheet"
+          href="${pageContext.request.contextPath}/css/dashboard.css?v=2">
 
-                        </div>
+    <link rel="stylesheet"
+          href="${pageContext.request.contextPath}/css/menu-lateral.css">
 
-                        <span class="marca-subtitulo">
-                            GESTÃO
-                        </span>
+</head>
 
-                    </div>
+<body class="pagina-dashboard fs-layout">
 
+    <jsp:include page="/WEB-INF/includes/menu-lateral.jsp" />
 
-                    <div class="dashboard-topo-acoes">
+    <main class="dashboard-principal">
 
-                        <a class="dashboard-link-site" href="${pageContext.request.contextPath}/">
-                            Ver site
-                        </a>
+        <div class="container">
 
-                        <a class="dashboard-sair" href="${pageContext.request.contextPath}/logout">
-                            Sair
-                        </a>
+            <section class="fs-dashboard-cabecalho">
 
-                    </div>
+                <div>
+                    <span class="destaque-pequeno">
+                        CENTRAL DE GESTÃO
+                    </span>
 
+                    <h1>Visão geral</h1>
+
+                    <p>
+                        Olá, <%= escapar(nomeUsuario) %>.
+                        Acompanhe os resultados do Fast Splash.
+                    </p>
                 </div>
 
-            </header>
+                <a class="interna-link"
+                   href="${pageContext.request.contextPath}/dashboard">
+                    ↻ Atualizar dados
+                </a>
 
+            </section>
 
-            <main class="dashboard-principal">
+            <section class="fs-indicadores">
 
-                <div class="container">
+                <a class="fs-indicador financeiro"
+                   href="${pageContext.request.contextPath}/pagamento?filtro=pagos">
 
+                    <span>Faturamento mensal</span>
+                    <strong>
+                        <%= moeda.format(dados.faturamentoMensal()) %>
+                    </strong>
+                    <small>Pagamentos realizados neste mês</small>
 
-                    <!-- =====================================
-                 BOAS-VINDAS
-            ====================================== -->
+                </a>
 
-                    <section class="dashboard-boas-vindas">
+                <a class="fs-indicador pendente"
+                   href="${pageContext.request.contextPath}/pagamento?filtro=pendentes">
 
-                        <div class="dashboard-boas-vindas-texto">
+                    <span>Valores a receber</span>
+                    <strong>
+                        <%= moeda.format(dados.valoresAReceber()) %>
+                    </strong>
+                    <small>
+                        <%= dados.pagamentosPendentes() %>
+                        pagamentos pendentes
+                    </small>
 
-                            <span class="destaque-pequeno">
-                                Painel interno
-                            </span>
+                </a>
 
-                            <h1>
-                                Olá, <%= nomeUsuario %>.
-                            </h1>
+                <a class="fs-indicador operacional"
+                   href="${pageContext.request.contextPath}/agendamento">
 
-                            <p>
-                                Acesse os módulos do Fast Splash
-                                para acompanhar e administrar
-                                as operações do sistema.
-                            </p>
+                    <span>Agendamentos de hoje</span>
+                    <strong><%= dados.agendamentosHoje() %></strong>
+                    <small>Agendamentos não cancelados</small>
 
-                        </div>
+                </a>
 
+                <a class="fs-indicador operacional"
+                   href="${pageContext.request.contextPath}/atendimento?filtro=emLavagem">
 
-                        <aside class="dashboard-perfil">
+                    <span>Lavagens em andamento</span>
+                    <strong><%= dados.atendimentosEmLavagem() %></strong>
+                    <small>Atendimentos em execução</small>
 
-                            <span class="dashboard-perfil-label">
-                                Usuário conectado
-                            </span>
+                </a>
 
-                            <strong>
-                                <%= nomeUsuario %>
-                            </strong>
+                <a class="fs-indicador"
+                   href="${pageContext.request.contextPath}/cliente">
 
-                            <span class="dashboard-perfil-nivel">
-                                <%= nivelAcesso %>
-                            </span>
+                    <span>Clientes ativos</span>
+                    <strong><%= dados.clientesAtivos() %></strong>
+                    <small>Cadastros disponíveis</small>
 
-                        </aside>
+                </a>
 
-                    </section>
+                <a class="fs-indicador"
+                   href="${pageContext.request.contextPath}/veiculo">
 
+                    <span>Veículos disponíveis</span>
+                    <strong><%= dados.veiculosAtivos() %></strong>
+                    <small>Veículos e proprietários ativos</small>
 
-                    <!-- =====================================
-                 MÓDULOS
-            ====================================== -->
+                </a>
 
-                    <section>
+                <% if (administrador) { %>
 
-                        <div class="dashboard-secao-topo">
+                    <a class="fs-indicador"
+                       href="${pageContext.request.contextPath}/servico">
 
-                            <div>
+                        <span>Serviços ativos</span>
+                        <strong><%= dados.servicosAtivos() %></strong>
+                        <small>Catálogo disponível</small>
 
-                                <h2>
-                                    Módulos do sistema
-                                </h2>
+                    </a>
 
-                                <p>
-                                    Escolha uma área para continuar.
-                                </p>
+                    <a class="fs-indicador"
+                       href="${pageContext.request.contextPath}/colaborador">
+
+                        <span>Colaboradores ativos</span>
+                        <strong><%= dados.colaboradoresAtivos() %></strong>
+                        <small>Equipe cadastrada</small>
+
+                    </a>
+
+                <% } %>
+
+            </section>
+
+            <section class="fs-graficos">
+
+                <article class="fs-dashboard-card">
+
+                    <h2>Evolução do faturamento</h2>
+                    <p>Pagamentos realizados nos últimos seis meses</p>
+
+                    <div class="fs-grafico-barras">
+
+                        <% for (Dashboard.FaturamentoMes mes :
+                                dados.faturamentoHistorico()) {
+
+                            int altura = maiorValor.signum() == 0
+                                ? 0
+                                : mes.valor()
+                                    .multiply(BigDecimal.valueOf(100))
+                                    .divide(maiorValor, 0,
+                                        RoundingMode.HALF_UP)
+                                    .intValue();
+                        %>
+
+                            <div class="fs-grafico-coluna">
+
+                                <div class="fs-barra-area">
+
+                                    <div class="fs-barra"
+                                         style="height: <%= altura %>%"
+                                         title="<%= moeda.format(mes.valor()) %>">
+                                    </div>
+
+                                </div>
+
+                                <strong>
+                                    <%= moeda.format(mes.valor()) %>
+                                </strong>
+
+                                <small>
+                                    <%= mes.mes().format(formatoMes) %>
+                                </small>
+
+                            </div>
+
+                        <% } %>
+
+                    </div>
+
+                </article>
+
+                <article class="fs-dashboard-card">
+
+                    <h2>Situação dos atendimentos</h2>
+                    <p>Distribuição do histórico por status</p>
+
+                    <%
+                        long[] quantidades = {
+                            dados.atendimentosAguardando(),
+                            dados.atendimentosEmLavagem(),
+                            dados.atendimentosFinalizados()
+                        };
+
+                        String[] nomes = {
+                            "Aguardando",
+                            "Em lavagem",
+                            "Finalizados"
+                        };
+
+                        String[] cores = {
+                            "#ff9b32",
+                            "#18c8ff",
+                            "#38cf91"
+                        };
+                    %>
+
+                    <div class="fs-total-atendimentos">
+
+                        <strong><%= totalAtendimentos %></strong>
+                        <span>Total de atendimentos</span>
+
+                    </div>
+
+                    <% for (int i = 0; i < nomes.length; i++) {
+
+                        double percentual = totalAtendimentos == 0
+                            ? 0
+                            : quantidades[i] * 100.0 / totalAtendimentos;
+                    %>
+
+                        <div class="fs-status-linha">
+
+                            <div class="fs-status-legenda">
+
+                                <span><%= nomes[i] %></span>
+
+                                <strong><%= quantidades[i] %></strong>
+
+                            </div>
+
+                            <div class="fs-status-trilho">
+
+                                <div class="fs-status-progresso"
+                                     style="width: <%= percentual %>%;
+                                            background: <%= cores[i] %>">
+                                </div>
 
                             </div>
 
                         </div>
 
+                    <% } %>
 
-                        <div class="dashboard-modulos">
+                </article>
 
+            </section>
 
-                            <a class="dashboard-card" href="${pageContext.request.contextPath}/cliente">
+            <section class="fs-dashboard-card">
 
-                                <div class="dashboard-card-icone">
-                                    👤
-                                </div>
+                <div class="fs-proximos-topo">
 
-                                <h3>
-                                    Clientes
-                                </h3>
+                    <div>
+                        <h2>Próximos agendamentos</h2>
+                        <p>Os cinco próximos horários disponíveis na agenda</p>
+                    </div>
 
-                                <p>
-                                    Consulte e gerencie
-                                    os clientes cadastrados.
-                                </p>
-
-                                <span class="dashboard-card-acao">
-                                    Acessar clientes →
-                                </span>
-
-                            </a>
-
-
-                            <a class="dashboard-card" href="${pageContext.request.contextPath}/veiculo">
-
-                                <div class="dashboard-card-icone">
-                                    🚗
-                                </div>
-
-                                <h3>
-                                    Veículos
-                                </h3>
-
-                                <p>
-                                    Consulte veículos e
-                                    seus respectivos clientes.
-                                </p>
-
-                                <span class="dashboard-card-acao">
-                                    Acessar veículos →
-                                </span>
-
-                            </a>
-
-
-                            <a class="dashboard-card" href="${pageContext.request.contextPath}/agendamento">
-
-                                <div class="dashboard-card-icone">
-                                    📅
-                                </div>
-
-                                <h3>
-                                    Agendamentos
-                                </h3>
-
-                                <p>
-                                    Consulte e organize
-                                    os agendamentos do lava-rápido.
-                                </p>
-
-                                <span class="dashboard-card-acao">
-                                    Acessar agendamentos →
-                                </span>
-
-                            </a>
-
-
-                            <a class="dashboard-card" href="${pageContext.request.contextPath}/atendimento">
-
-                                <div class="dashboard-card-icone">
-                                    💦
-                                </div>
-
-                                <h3>
-                                    Atendimentos
-                                </h3>
-
-                                <p>
-                                    Acompanhe os serviços
-                                    em andamento e finalizados.
-                                </p>
-
-                                <span class="dashboard-card-acao">
-                                    Acessar atendimentos →
-                                </span>
-
-                            </a>
-
-
-                            <% if (administrador) { %>
-
-                                <a class="dashboard-card dashboard-card-admin"
-                                    href="${pageContext.request.contextPath}/servico">
-
-                                    <div class="dashboard-card-icone">
-                                        🧽
-                                    </div>
-
-                                    <h3>
-                                        Serviços
-                                    </h3>
-
-                                    <p>
-                                        Cadastre e gerencie
-                                        os serviços oferecidos.
-                                    </p>
-
-                                    <span class="dashboard-card-acao">
-                                        Acessar serviços →
-                                    </span>
-
-                                </a>
-
-
-                                <a class="dashboard-card dashboard-card-admin"
-                                    href="${pageContext.request.contextPath}/colaborador">
-
-                                    <div class="dashboard-card-icone">
-                                        👥
-                                    </div>
-
-                                    <h3>
-                                        Colaboradores
-                                    </h3>
-
-                                    <p>
-                                        Gerencie funcionários
-                                        e seus níveis de acesso.
-                                    </p>
-
-                                    <span class="dashboard-card-acao">
-                                        Acessar colaboradores →
-                                    </span>
-
-                                </a>
-
-                                <% } %>
-
-
-                                    <a class="dashboard-card" href="${pageContext.request.contextPath}/pagamento">
-
-                                        <div class="dashboard-card-icone">
-                                            💳
-                                        </div>
-
-                                        <h3>
-                                            Pagamentos
-                                        </h3>
-
-                                        <p>
-                                            Consulte pagamentos
-                                            pendentes e realizados.
-                                        </p>
-
-                                        <span class="dashboard-card-acao">
-                                            Acessar pagamentos →
-                                        </span>
-
-                                    </a>
-
-
-                        </div>
-
-                    </section>
+                    <a class="interna-link"
+                       href="${pageContext.request.contextPath}/agendamento">
+                        Ver agendamentos →
+                    </a>
 
                 </div>
 
-            </main>
+                <% if (dados.proximosAgendamentos().isEmpty()) { %>
 
-        </body>
+                    <div class="estado-vazio">
+                        Nenhum agendamento futuro encontrado.
+                    </div>
 
-        </html>
+                <% } else { %>
+
+                    <div class="tabela-responsiva">
+
+                        <table class="tabela-interna fs-tabela-dashboard">
+
+                            <thead>
+                                <tr>
+                                    <th>Data / Horário</th>
+                                    <th>Cliente</th>
+                                    <th>Veículo</th>
+                                    <th>Serviços</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <% for (Dashboard.ProximoAgendamento item :
+                                        dados.proximosAgendamentos()) { %>
+
+                                    <tr>
+
+                                        <td>
+                                            <strong>
+                                                <%= item.data().format(formatoData) %>
+                                            </strong>
+                                            <small class="fs-horario">
+                                                <%= item.horario().format(formatoHora) %>
+                                            </small>
+                                        </td>
+
+                                        <td><%= escapar(item.cliente()) %></td>
+                                        <td><%= escapar(item.veiculo()) %></td>
+                                        <td><%= escapar(item.servicos()) %></td>
+
+                                        <td>
+                                            <span class="fs-status-agendado">
+                                                Agendado
+                                            </span>
+                                        </td>
+
+                                    </tr>
+
+                                <% } %>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                <% } %>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <script src="${pageContext.request.contextPath}/js/menu-lateral.js"></script>
+
+</body>
+
+</html>

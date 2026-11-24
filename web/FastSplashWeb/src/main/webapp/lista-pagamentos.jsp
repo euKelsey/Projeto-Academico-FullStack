@@ -33,7 +33,40 @@
                                 "BR"
                                 )
                                 );
-                                %>
+
+    String filtro = (String) request.getAttribute("filtro");
+
+    if (!"pagos".equals(filtro)
+            && !"cancelados".equals(filtro)
+            && !"arquivados".equals(filtro)) {
+
+        filtro = "pendentes";
+    }
+
+    boolean administrador =
+        "ADMINISTRADOR".equals(
+            session.getAttribute("nivelAcesso"));
+
+    String resultado = request.getParameter("status");
+    String erro = request.getParameter("erro");
+
+    String mensagemSucesso = switch (
+        resultado == null ? "" : resultado
+    ) {
+        case "arquivado" ->
+            "Pagamento arquivado com sucesso. Registro financeiro preservado.";
+
+        case "restaurado" ->
+            "Pagamento restaurado com sucesso.";
+
+        default -> "";
+    };
+
+    String mensagemErro =
+        "operacaoInvalida".equals(erro)
+        ? "Não foi possível alterar o arquivamento deste pagamento."
+        : "";
+%>
 
                                 <!DOCTYPE html>
 
@@ -52,54 +85,81 @@
 
                                     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/pagamentos.css">
 
-                                </head>
+                                <style>
+    .filtros-clientes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 20px;
+    }
+
+    .filtro-cliente {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 18px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .filtro-cliente:hover {
+        border-color: #f97316;
+    }
+
+    .filtro-selecionado {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: #ffffff;
+    }
+
+    .aviso-sucesso-cliente {
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .acoes-tabela {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .acoes-tabela form {
+        margin: 0;
+    }
+
+    .acao-status-cliente {
+        cursor: pointer;
+        padding: 7px 12px;
+        border: 1px solid currentColor;
+        border-radius: 6px;
+        font-weight: 600;
+        background: transparent;
+    }
+
+    .acao-inativar-cliente {
+        color: #b45309;
+    }
+
+    .acao-reativar-cliente {
+        color: #15803d;
+    }
+</style>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/menu-lateral.css">
+</head>
 
 
-                                <body class="pagina-interna">
+                                <body class="pagina-interna fs-layout">
+<jsp:include page="/WEB-INF/includes/menu-lateral.jsp" />
 
 
-                                    <header class="interna-topo">
-
-                                        <div class="container interna-topo-conteudo">
-
-                                            <div class="marca-cabecalho">
-
-                                                <div class="marca-nome">
-
-                                                    <span class="marca-fast">
-                                                        Fast
-                                                    </span>
-
-                                                    <span class="marca-splash">
-                                                        Splash
-                                                    </span>
-
-                                                </div>
-
-                                                <span class="marca-subtitulo">
-                                                    GESTÃO
-                                                </span>
-
-                                            </div>
 
 
-                                            <div class="interna-topo-acoes">
-
-                                                <a class="interna-link"
-                                                    href="${pageContext.request.contextPath}/dashboard.jsp">
-                                                    ← Dashboard
-                                                </a>
-
-                                                <a class="interna-link"
-                                                    href="${pageContext.request.contextPath}/logout">
-                                                    Sair
-                                                </a>
-
-                                            </div>
-
-                                        </div>
-
-                                    </header>
 
 
                                     <main class="interna-principal">
@@ -107,7 +167,19 @@
                                         <div class="container">
 
 
-                                            <section class="interna-cabecalho">
+
+<% if (!mensagemSucesso.isEmpty()) { %>
+    <div class="aviso-sucesso-cliente" role="status">
+        <strong><%= mensagemSucesso %></strong>
+    </div>
+<% } %>
+
+<% if (!mensagemErro.isEmpty()) { %>
+    <div class="aviso-interno" role="alert">
+        <strong><%= mensagemErro %></strong>
+    </div>
+<% } %>
+<section class="interna-cabecalho">
 
                                                 <div>
 
@@ -130,6 +202,33 @@
 
 
                                             <section class="tabela-card">
+<nav class="filtros-clientes" aria-label="Status dos pagamentos">
+
+    <a class="filtro-cliente <%= "pendentes".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/pagamento?filtro=pendentes">
+        Pendentes
+    </a>
+
+    <a class="filtro-cliente <%= "pagos".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/pagamento?filtro=pagos">
+        Pagos
+    </a>
+
+    <a class="filtro-cliente <%= "cancelados".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/pagamento?filtro=cancelados">
+        Cancelados
+    </a>
+
+    <a class="filtro-cliente <%= "arquivados".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/pagamento?filtro=arquivados">
+        Arquivados
+    </a>
+</nav>
+
 
                                                 <div class="tabela-pesquisa">
 
@@ -208,7 +307,8 @@
                                                                         </span>
                                                                     </th>
 
-                                                                </tr>
+                                                                <th>Ações</th>
+</tr>
 
                                                             </thead>
 
@@ -339,7 +439,8 @@
 
                                                                                     <span
                                                                                         class="pagamento-pendente-texto">
-                                                                                        Aguardando pagamento
+                                                                                        <%= "CANCELADO".equals(status)
+        ? "—" : "Aguardando pagamento" %>
                                                                                     </span>
 
                                                                                     <% } %>
@@ -352,12 +453,74 @@
                                                                             <span
                                                                                 class="status-badge <%= classeStatus %>">
                                                                                 <%= status %>
+
+        <% if (pagamento.isArquivado()) { %>
+            <small> · Arquivado</small>
+        <% } %>
                                                                             </span>
 
                                                                         </td>
 
 
-                                                                    </tr>
+
+<td>
+    <div class="acoes-tabela">
+
+        <% if (administrador
+                && pagamento.getIdPagamento() > 0) { %>
+
+            <% if (pagamento.isArquivado()) { %>
+
+                <form action="${pageContext.request.contextPath}/pagamento"
+                      method="post">
+
+                    <input type="hidden" name="acao" value="restaurar">
+                    <input type="hidden" name="filtro" value="<%= filtro %>">
+                    <input type="hidden" name="idPagamento"
+                           value="<%= pagamento.getIdPagamento() %>">
+
+                    <button class="acao-status-cliente acao-reativar-cliente"
+                            type="submit">
+                        Restaurar
+                    </button>
+
+                </form>
+
+            <% } else if ("PAGO".equals(status)
+                    || "CANCELADO".equals(status)) { %>
+
+                <form action="${pageContext.request.contextPath}/pagamento"
+                      method="post">
+
+                    <input type="hidden" name="acao" value="arquivar">
+                    <input type="hidden" name="filtro" value="<%= filtro %>">
+                    <input type="hidden" name="idPagamento"
+                           value="<%= pagamento.getIdPagamento() %>">
+
+                    <button class="acao-status-cliente acao-inativar-cliente"
+                            type="submit"
+                            onclick="return confirm('Deseja arquivar este pagamento? O registro financeiro sera preservado.');">
+                        Arquivar
+                    </button>
+
+                </form>
+
+            <% } else { %>
+
+                <span class="dashboard-card-acao">—</span>
+
+            <% } %>
+
+        <% } else { %>
+
+            <span class="dashboard-card-acao">—</span>
+
+        <% } %>
+
+    </div>
+</td>
+
+</tr>
 
 
                                                                     <% } %>
@@ -373,7 +536,7 @@
 
                                                             <div class="estado-vazio">
 
-                                                                Nenhum pagamento encontrado.
+                                                                Nenhum pagamento encontrado nesta categoria.
 
                                                             </div>
 
@@ -656,6 +819,7 @@
 
                                     </script>
 
-                                </body>
+                                <script src="${pageContext.request.contextPath}/js/menu-lateral.js"></script>
+</body>
 
                                 </html>

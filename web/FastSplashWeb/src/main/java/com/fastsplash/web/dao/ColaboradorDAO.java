@@ -126,6 +126,7 @@ public class ColaboradorDAO {
         String sql = """
                 SELECT *
                 FROM colaborador
+                WHERE ativo = TRUE AND excluido_em IS NULL
                 ORDER BY id_colaborador
                 """;
 
@@ -212,28 +213,61 @@ public class ColaboradorDAO {
     // UPDATE
     // =========================================
 
+
     public void atualizar(
             Colaborador colaborador,
             boolean alterarSenha
     ) throws SQLException {
 
+        try (Connection conexao = Conexao.conectar()) {
 
-        if (alterarSenha) {
+            conexao.setAutoCommit(false);
 
-            atualizarComSenha(
-                    colaborador
-            );
+            try {
 
-        } else {
+                List<Colaborador> registros =
+                        bloquearColaboradores(conexao);
 
-            atualizarSemSenha(
-                    colaborador
-            );
+                Colaborador atual = registros.stream()
+                        .filter(c -> c.getIdColaborador()
+                                == colaborador.getIdColaborador())
+                        .findFirst()
+                        .orElse(null);
+
+                if (atual == null
+                        || !atual.isAtivo()
+                        || atual.isExcluido()) {
+
+                    throw new SQLException(
+                            "Colaborador indisponivel para edicao.");
+                }
+
+                if ("ADMINISTRADOR".equals(atual.getNivelAcesso())
+                        && !"ADMINISTRADOR".equals(
+                                colaborador.getNivelAcesso())
+                        && contarAdministradores(registros) <= 1) {
+
+                    throw new SQLException(
+                            "Nao e permitido alterar o nivel do ultimo administrador.");
+                }
+
+                if (alterarSenha) {
+                    atualizarComSenha(conexao, colaborador);
+                } else {
+                    atualizarSemSenha(conexao, colaborador);
+                }
+
+                conexao.commit();
+
+            } catch (SQLException e) {
+                conexao.rollback();
+                throw e;
+            }
         }
     }
 
-
     private void atualizarSemSenha(
+            Connection conexao,
             Colaborador colaborador
     ) throws SQLException {
 
@@ -245,13 +279,12 @@ public class ColaboradorDAO {
                     nivel_acesso = ?,
                     email = ?
                 WHERE id_colaborador = ?
+                  AND ativo = TRUE
+                  AND excluido_em IS NULL
                 """;
 
 
         try (
-            Connection conexao =
-                    Conexao.conectar();
-
             PreparedStatement comando =
                     conexao.prepareStatement(sql)
         ) {
@@ -300,6 +333,7 @@ public class ColaboradorDAO {
 
 
     private void atualizarComSenha(
+            Connection conexao,
             Colaborador colaborador
     ) throws SQLException {
 
@@ -312,13 +346,12 @@ public class ColaboradorDAO {
                     email = ?,
                     senha_hash = ?
                 WHERE id_colaborador = ?
+                  AND ativo = TRUE
+                  AND excluido_em IS NULL
                 """;
 
 
         try (
-            Connection conexao =
-                    Conexao.conectar();
-
             PreparedStatement comando =
                     conexao.prepareStatement(sql)
         ) {
@@ -386,32 +419,292 @@ public class ColaboradorDAO {
     // DELETE
     // =========================================
 
-    public void excluir(
+
+    public List<Colaborador> listarPorStatus(
+            String status
+    ) throws SQLException {
+
+        String filtro = switch (
+                status == null ? "ativos" : status
+        ) {
+            case "inativos" ->
+                "ativo = FALSE AND excluido_em IS NULL";
+            case "excluidos" ->
+                "excluido_em IS NOT NULL";
+            default ->
+                "ativo = TRUE AND excluido_em IS NULL";
+        };
+
+        String sql = "SELECT * FROM colaborador WHERE "
+                + filtro + " ORDER BY id_colaborador";
+
+        List<Colaborador> colaboradores = new ArrayList<>();
+
+        try (Connection conexao = Conexao.conectar();
+             PreparedStatement comando =
+                     conexao.prepareStatement(sql);
+             ResultSet resultado = comando.executeQuery()) {
+
+            while (resultado.next()) {
+                colaboradores.add(criarColaborador(resultado));
+            }
+        }
+
+        return colaboradores;
+    }
+
+    // Bloqueio compartilhado pelas operacoes administrativas
+    private List<Colaborador> bloquearColaboradores(
+            Connection conexao
+    ) throws SQLException {
+
+        String sql = """
+                SELECT *
+                FROM colaborador FORCE INDEX (PRIMARY)
+                ORDER BY id_colaborador
+                FOR UPDATE
+                """;
+
+        List<Colaborador> colaboradores = new ArrayList<>();
+
+        try (PreparedStatement comando =
+                     conexao.prepareStatement(sql);
+             ResultSet resultado = comando.executeQuery()) {
+
+            while (resultado.next()) {
+                colaboradores.add(criarColaborador(resultado));
+            }
+        }
+
+        return colaboradores;
+    }
+
+    private long contarAdministradores(
+            List<Colaborador> colaboradores
+    ) {
+
+        return colaboradores.stream()
+                .filter(c -> c.isAtivo()
+                        && !c.isExcluido()
+                        && "ADMINISTRADOR".equals(
+                                c.getNivelAcesso()))
+                .count();
+    }
+
+    private boolean possuiPendencias(
+            Connection conexao,
             int idColaborador
     ) throws SQLException {
 
         String sql = """
-                DELETE FROM colaborador
-                WHERE id_colaborador = ?
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM colaborador_atendimento ca
+                    INNER JOIN atendimento a
+                        ON a.id_atendimento = ca.id_atendimento
+                    WHERE ca.id_colaborador = ?
+                      AND a.status IN (
+                          'AGUARDANDO', 'EM_LAVAGEM'
+                      )
+                )
                 """;
 
+        try (PreparedStatement comando =
+                conexao.prepareStatement(sql)) {
 
-        try (
-            Connection conexao =
-                    Conexao.conectar();
+            comando.setInt(1, idColaborador);
 
-            PreparedStatement comando =
-                    conexao.prepareStatement(sql)
-        ) {
+            try (ResultSet resultado =
+                    comando.executeQuery()) {
 
-            comando.setInt(
-                    1,
-                    idColaborador
-            );
-
-
-            comando.executeUpdate();
+                return resultado.next()
+                        && resultado.getBoolean(1);
+            }
         }
+    }
+
+    private ResultadoStatusColaborador alterarStatus(
+            int idColaborador,
+            int idUsuarioLogado,
+            String acao
+    ) throws SQLException {
+
+        try (Connection conexao = Conexao.conectar()) {
+
+            conexao.setAutoCommit(false);
+
+            try {
+
+                List<Colaborador> registros =
+                        bloquearColaboradores(conexao);
+
+                Colaborador atual = registros.stream()
+                        .filter(c -> c.getIdColaborador()
+                                == idColaborador)
+                        .findFirst()
+                        .orElse(null);
+
+                if (atual == null) {
+                    conexao.rollback();
+                    return ResultadoStatusColaborador
+                            .COLABORADOR_NAO_ENCONTRADO;
+                }
+
+                boolean desativar =
+                        "inativar".equals(acao)
+                        || "excluir".equals(acao);
+
+                if (desativar
+                        && idColaborador == idUsuarioLogado) {
+
+                    conexao.rollback();
+
+                    return ResultadoStatusColaborador
+                            .PROPRIO_USUARIO;
+                }
+
+                if (atual.isExcluido()
+                        && !"restaurar".equals(acao)) {
+
+                    conexao.rollback();
+
+                    return ResultadoStatusColaborador
+                            .JA_EXCLUIDO;
+                }
+
+                if ("restaurar".equals(acao)
+                        && !atual.isExcluido()) {
+
+                    conexao.rollback();
+
+                    return ResultadoStatusColaborador
+                            .NAO_EXCLUIDO;
+                }
+
+                if ("inativar".equals(acao)
+                        && !atual.isAtivo()) {
+
+                    conexao.rollback();
+
+                    return ResultadoStatusColaborador
+                            .JA_INATIVO;
+                }
+
+                if ("reativar".equals(acao)
+                        && atual.isAtivo()) {
+
+                    conexao.rollback();
+
+                    return ResultadoStatusColaborador
+                            .JA_ATIVO;
+                }
+
+                if (desativar) {
+
+                    if (atual.isAtivo()
+                            && "ADMINISTRADOR".equals(
+                                    atual.getNivelAcesso())
+                            && contarAdministradores(registros) <= 1) {
+
+                        conexao.rollback();
+
+                        return ResultadoStatusColaborador
+                                .ULTIMO_ADMINISTRADOR;
+                    }
+
+                    if (possuiPendencias(
+                            conexao, idColaborador)) {
+
+                        conexao.rollback();
+
+                        return ResultadoStatusColaborador
+                                .POSSUI_PENDENCIAS;
+                    }
+                }
+
+                String sql = switch (acao) {
+
+                    case "inativar" -> """
+                            UPDATE colaborador
+                            SET ativo = FALSE
+                            WHERE id_colaborador = ?
+                            """;
+
+                    case "excluir" -> """
+                            UPDATE colaborador
+                            SET ativo = FALSE,
+                                excluido_em = CURRENT_TIMESTAMP
+                            WHERE id_colaborador = ?
+                            """;
+
+                    case "reativar", "restaurar" -> """
+                            UPDATE colaborador
+                            SET ativo = TRUE,
+                                excluido_em = NULL
+                            WHERE id_colaborador = ?
+                            """;
+
+                    default ->
+                        throw new SQLException("Acao invalida.");
+                };
+
+                try (PreparedStatement comando =
+                        conexao.prepareStatement(sql)) {
+
+                    comando.setInt(1, idColaborador);
+
+                    if (comando.executeUpdate() != 1) {
+                        throw new SQLException(
+                                "Nao foi possivel alterar o status.");
+                    }
+                }
+
+                conexao.commit();
+
+                return ResultadoStatusColaborador.SUCESSO;
+
+            } catch (SQLException e) {
+
+                conexao.rollback();
+                throw e;
+            }
+        }
+    }
+
+    public ResultadoStatusColaborador inativarColaborador(
+            int idColaborador,
+            int idUsuarioLogado
+    ) throws SQLException {
+
+        return alterarStatus(
+                idColaborador, idUsuarioLogado, "inativar");
+    }
+
+    public ResultadoStatusColaborador reativarColaborador(
+            int idColaborador,
+            int idUsuarioLogado
+    ) throws SQLException {
+
+        return alterarStatus(
+                idColaborador, idUsuarioLogado, "reativar");
+    }
+
+    public ResultadoStatusColaborador excluirLogicamente(
+            int idColaborador,
+            int idUsuarioLogado
+    ) throws SQLException {
+
+        return alterarStatus(
+                idColaborador, idUsuarioLogado, "excluir");
+    }
+
+    public ResultadoStatusColaborador restaurarColaborador(
+            int idColaborador,
+            int idUsuarioLogado
+    ) throws SQLException {
+
+        return alterarStatus(
+                idColaborador, idUsuarioLogado, "restaurar");
     }
 
     public Colaborador buscarPorEmail(
@@ -456,7 +749,7 @@ public class ColaboradorDAO {
 
         return null;
     }
-    
+
     public void atualizarSenhaHash(
             int idColaborador,
             String senhaHash
@@ -466,6 +759,8 @@ public class ColaboradorDAO {
                 UPDATE colaborador
                 SET senha_hash = ?
                 WHERE id_colaborador = ?
+                  AND ativo = TRUE
+                  AND excluido_em IS NULL
                 """;
 
 
@@ -546,6 +841,17 @@ public class ColaboradorDAO {
                 )
         );
 
+
+        colaborador.setAtivo(
+                resultado.getBoolean("ativo")
+        );
+
+        colaborador.setExcluidoEm(
+                resultado.getObject(
+                        "excluido_em",
+                        java.time.LocalDateTime.class
+                )
+        );
 
         return colaborador;
     }

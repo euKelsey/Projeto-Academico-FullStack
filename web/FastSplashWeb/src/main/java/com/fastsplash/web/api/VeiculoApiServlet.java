@@ -6,6 +6,7 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 
 import com.fastsplash.web.dao.VeiculoDAO;
+import com.fastsplash.web.dao.ResultadoStatusVeiculo;
 import com.fastsplash.web.model.Cliente;
 import com.fastsplash.web.model.Veiculo;
 
@@ -398,6 +399,8 @@ public class VeiculoApiServlet extends HttpServlet {
 
             if (
                 veiculo == null ||
+                !veiculo.isAtivo() ||
+                veiculo.isExcluido() ||
                 veiculo.getIdCliente()
                     != cliente.getIdCliente()
             ) {
@@ -511,6 +514,8 @@ public class VeiculoApiServlet extends HttpServlet {
 
             if (
                 veiculo == null ||
+                !veiculo.isAtivo() ||
+                veiculo.isExcluido() ||
                 veiculo.getIdCliente()
                     != cliente.getIdCliente()
             ) {
@@ -524,9 +529,34 @@ public class VeiculoApiServlet extends HttpServlet {
                 return;
             }
 
-            veiculoDAO.excluir(
-                    idVeiculo
-            );
+            ResultadoStatusVeiculo resultado =
+                    veiculoDAO.excluirLogicamente(idVeiculo);
+
+            if (resultado != ResultadoStatusVeiculo.SUCESSO) {
+
+                String mensagem = switch (resultado) {
+
+                    case POSSUI_PENDENCIAS ->
+                        "Este veículo possui agendamentos ou atendimentos pendentes.";
+
+                    case JA_EXCLUIDO ->
+                        "Este veículo já foi excluído.";
+
+                    case VEICULO_NAO_ENCONTRADO ->
+                        "Veículo não encontrado.";
+
+                    default ->
+                        "Não foi possível excluir o veículo.";
+                };
+
+                responderErro(
+                        response,
+                        HttpServletResponse.SC_CONFLICT,
+                        mensagem
+                );
+
+                return;
+            }
 
             response
                 .getWriter()
@@ -546,7 +576,7 @@ public class VeiculoApiServlet extends HttpServlet {
             responderErro(
                     response,
                     HttpServletResponse.SC_CONFLICT,
-                    "Não é possível excluir este veículo porque ele possui registros vinculados."
+                    "Não foi possível concluir a exclusão do veículo."
             );
 
         } catch (SQLException e) {

@@ -13,6 +13,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/atendimento")
 public class AtendimentoServlet
@@ -140,6 +141,15 @@ public class AtendimentoServlet
         // INICIAR LAVAGEM
         // =====================================
 
+        if ("arquivar".equals(acao)
+                || "restaurar".equals(acao)) {
+
+            processarArquivamento(
+                    request, response, acao);
+
+            return;
+        }
+
         if ("iniciar".equals(acao)) {
 
             int idAtendimento =
@@ -159,7 +169,7 @@ public class AtendimentoServlet
 
                 response.sendRedirect(
                         request.getContextPath()
-                        + "/atendimento"
+                        + "/atendimento?filtro=emLavagem"
                 );
 
 
@@ -204,7 +214,7 @@ public class AtendimentoServlet
 
                 response.sendRedirect(
                         request.getContextPath()
-                        + "/atendimento"
+                        + "/atendimento?filtro=finalizados"
                 );
 
 
@@ -317,7 +327,9 @@ public class AtendimentoServlet
 
             request.setAttribute(
                     "atendimentos",
-                    atendimentoDAO.listarTodos()
+                    atendimentoDAO.listarPorStatus(
+                            normalizarFiltro(
+                                request.getParameter("filtro")))
             );
 
             request.setAttribute(
@@ -377,4 +389,101 @@ public class AtendimentoServlet
             );
         }
     }
+
+    private boolean usuarioAdministrador(
+            HttpServletRequest request
+    ) {
+
+        HttpSession sessao = request.getSession(false);
+
+        return sessao != null
+                && "ADMINISTRADOR".equals(
+                        sessao.getAttribute("nivelAcesso"));
+    }
+
+    private String normalizarFiltro(String filtro) {
+
+        if ("emLavagem".equals(filtro)
+                || "finalizados".equals(filtro)
+                || "arquivados".equals(filtro)) {
+
+            return filtro;
+        }
+
+        return "aguardando";
+    }
+
+    private void processarArquivamento(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String acao
+    ) throws ServletException, IOException {
+
+        if (!usuarioAdministrador(request)) {
+
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Apenas administradores podem arquivar ou restaurar atendimentos.");
+
+            return;
+        }
+
+        int idAtendimento;
+
+        try {
+
+            idAtendimento = Integer.parseInt(
+                    request.getParameter("idAtendimento"));
+
+            if (idAtendimento <= 0) {
+                throw new NumberFormatException();
+            }
+
+        } catch (NumberFormatException e) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "ID do atendimento inválido.");
+
+            return;
+        }
+
+        String filtro = normalizarFiltro(
+                request.getParameter("filtro"));
+
+        try {
+
+            boolean sucesso = "arquivar".equals(acao)
+                    ? atendimentoDAO.arquivarAtendimento(
+                            idAtendimento)
+                    : atendimentoDAO.restaurarAtendimento(
+                            idAtendimento);
+
+            String mensagem;
+
+            if (sucesso) {
+
+                mensagem = "status=" +
+                        ("arquivar".equals(acao)
+                            ? "arquivado"
+                            : "restaurado");
+
+            } else {
+
+                mensagem = "erro=operacaoInvalida";
+            }
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/atendimento?filtro=" + filtro
+                    + "&" + mensagem);
+
+        } catch (SQLException e) {
+
+            throw new ServletException(
+                    "Erro ao alterar arquivamento do atendimento.",
+                    e);
+        }
+    }
+
 }

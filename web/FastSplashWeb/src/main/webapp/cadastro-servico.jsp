@@ -15,52 +15,24 @@
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site.css">
             <link rel="stylesheet" href="${pageContext.request.contextPath}/css/interno.css">
 
-    </head>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/menu-lateral.css">
+</head>
 
 
-    <body class="pagina-interna">
+    <body class="pagina-interna fs-layout">
+<jsp:include page="/WEB-INF/includes/menu-lateral.jsp" />
+
 
 
         <header class="interna-topo">
-
-            <div class="container interna-topo-conteudo">
-
-                <div class="marca-cabecalho">
-
-                    <div class="marca-nome">
-
-                        <span class="marca-fast">
-                            Fast
-                        </span>
-
-                        <span class="marca-splash">
-                            Splash
-                        </span>
-
-                    </div>
-
-                    <span class="marca-subtitulo">
-                        GESTÃO
-                    </span>
-
-                </div>
-
-
-                <div class="interna-topo-acoes">
-
-                    <a class="interna-link" href="${pageContext.request.contextPath}/servico">
+    <div class="container interna-topo-conteudo">
+        <div class="interna-topo-acoes">
+<a class="interna-link" href="${pageContext.request.contextPath}/servico">
                         ← Serviços
                     </a>
-
-                    <a class="interna-link" href="${pageContext.request.contextPath}/dashboard.jsp">
-                        Dashboard
-                    </a>
-
-                </div>
-
-            </div>
-
-        </header>
+        </div>
+    </div>
+</header>
 
 
         <main class="interna-principal">
@@ -231,6 +203,7 @@
 
         </script>
 
-    </body>
+    <script src="${pageContext.request.contextPath}/js/menu-lateral.js"></script>
+</body>
 
     </html>

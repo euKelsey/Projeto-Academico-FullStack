@@ -67,6 +67,7 @@ public class ClienteDAO {
         String sql = """
                 SELECT *
                 FROM cliente
+                WHERE ativo = TRUE AND excluido_em IS NULL
                 ORDER BY id_cliente
                 """;
 
@@ -346,7 +347,7 @@ public class ClienteDAO {
         String sql = """
                 UPDATE cliente
                 SET ativo = ?
-                WHERE id_cliente = ?
+                WHERE id_cliente = ? AND excluido_em IS NULL
                 """;
 
         try (
@@ -389,6 +390,11 @@ public class ClienteDAO {
                     conexao.rollback();
                     return ResultadoStatusCliente
                             .CLIENTE_NAO_ENCONTRADO;
+                }
+
+                if (estaExcluido(conexao, idCliente)) {
+                    conexao.rollback();
+                    return ResultadoStatusCliente.JA_EXCLUIDO;
                 }
 
                 if (!consultarStatus(conexao, idCliente)) {
@@ -443,6 +449,11 @@ public class ClienteDAO {
                             .CLIENTE_NAO_ENCONTRADO;
                 }
 
+                if (estaExcluido(conexao, idCliente)) {
+                    conexao.rollback();
+                    return ResultadoStatusCliente.JA_EXCLUIDO;
+                }
+
                 if (consultarStatus(conexao, idCliente)) {
                     conexao.rollback();
                     return ResultadoStatusCliente
@@ -471,23 +482,168 @@ public class ClienteDAO {
     // DELETE
     // =========================================
 
-    public void excluir(int idCliente)
-            throws SQLException {
+
+    public boolean estaExcluido(
+            Connection conexao,
+            int idCliente
+    ) throws SQLException {
 
         String sql = """
-                DELETE FROM cliente
+                SELECT excluido_em
+                FROM cliente
                 WHERE id_cliente = ?
                 """;
 
-        try (
-            Connection conexao = Conexao.conectar();
-            PreparedStatement comando =
-                    conexao.prepareStatement(sql)
-        ) {
+        try (PreparedStatement comando =
+                conexao.prepareStatement(sql)) {
 
             comando.setInt(1, idCliente);
-            comando.executeUpdate();
+
+            try (ResultSet resultado = comando.executeQuery()) {
+                return resultado.next()
+                        && resultado.getTimestamp("excluido_em") != null;
+            }
         }
+    }
+
+
+    public ResultadoStatusCliente excluirLogicamente(
+            int idCliente
+    ) throws SQLException {
+
+        try (Connection conexao = Conexao.conectar()) {
+
+            conexao.setAutoCommit(false);
+
+            try {
+                if (!bloquearCliente(conexao, idCliente)) {
+                    conexao.rollback();
+                    return ResultadoStatusCliente.CLIENTE_NAO_ENCONTRADO;
+                }
+
+                if (estaExcluido(conexao, idCliente)) {
+                    conexao.rollback();
+                    return ResultadoStatusCliente.JA_EXCLUIDO;
+                }
+
+                if (possuiPendencias(conexao, idCliente)) {
+                    conexao.rollback();
+                    return ResultadoStatusCliente.POSSUI_PENDENCIAS;
+                }
+
+                String sql = """
+                        UPDATE cliente
+                        SET ativo = FALSE,
+                            excluido_em = CURRENT_TIMESTAMP
+                        WHERE id_cliente = ?
+                          AND excluido_em IS NULL
+                        """;
+
+                try (PreparedStatement comando =
+                        conexao.prepareStatement(sql)) {
+                    comando.setInt(1, idCliente);
+                    comando.executeUpdate();
+                }
+
+                conexao.commit();
+                return ResultadoStatusCliente.SUCESSO;
+
+            } catch (SQLException e) {
+                conexao.rollback();
+                throw e;
+            }
+        }
+    }
+
+    // Compatibilidade com chamadas existentes
+    public void excluir(int idCliente) throws SQLException {
+
+        ResultadoStatusCliente resultado =
+                excluirLogicamente(idCliente);
+
+        if (resultado != ResultadoStatusCliente.SUCESSO) {
+            throw new SQLException(
+                    "Nao foi possivel excluir: " + resultado
+            );
+        }
+    }
+
+    public ResultadoStatusCliente restaurarCliente(
+            int idCliente
+    ) throws SQLException {
+
+        try (Connection conexao = Conexao.conectar()) {
+
+            conexao.setAutoCommit(false);
+
+            try {
+                if (!bloquearCliente(conexao, idCliente)) {
+                    conexao.rollback();
+                    return ResultadoStatusCliente.CLIENTE_NAO_ENCONTRADO;
+                }
+
+                if (!estaExcluido(conexao, idCliente)) {
+                    conexao.rollback();
+                    return ResultadoStatusCliente.NAO_EXCLUIDO;
+                }
+
+                String sql = """
+                        UPDATE cliente
+                        SET ativo = TRUE,
+                            excluido_em = NULL
+                        WHERE id_cliente = ?
+                          AND excluido_em IS NOT NULL
+                        """;
+
+                try (PreparedStatement comando =
+                        conexao.prepareStatement(sql)) {
+                    comando.setInt(1, idCliente);
+                    comando.executeUpdate();
+                }
+
+                conexao.commit();
+                return ResultadoStatusCliente.SUCESSO;
+
+            } catch (SQLException e) {
+                conexao.rollback();
+                throw e;
+            }
+        }
+    }
+
+    public List<Cliente> listarPorStatus(
+            String status
+    ) throws SQLException {
+
+        String filtro = switch (
+                status == null ? "ativos" : status
+        ) {
+            case "inativos" ->
+                "ativo = FALSE AND excluido_em IS NULL";
+
+            case "excluidos" ->
+                "excluido_em IS NOT NULL";
+
+            default ->
+                "ativo = TRUE AND excluido_em IS NULL";
+        };
+
+        String sql = "SELECT * FROM cliente WHERE "
+                + filtro + " ORDER BY nome, id_cliente";
+
+        List<Cliente> clientes = new ArrayList<>();
+
+        try (Connection conexao = Conexao.conectar();
+             PreparedStatement comando =
+                     conexao.prepareStatement(sql);
+             ResultSet resultado = comando.executeQuery()) {
+
+            while (resultado.next()) {
+                clientes.add(criarCliente(resultado));
+            }
+        }
+
+        return clientes;
     }
 
     // =========================================
@@ -528,6 +684,39 @@ public class ClienteDAO {
                 resultado.getBoolean("ativo")
         );
 
+        cliente.setExcluidoEm(
+                resultado.getObject(
+                        "excluido_em",
+                        java.time.LocalDateTime.class
+                )
+        );
+
         return cliente;
+    }
+
+    public List<Cliente> listarTodosParaHistorico()
+            throws SQLException {
+
+        String sql = """
+                SELECT *
+                FROM cliente
+                ORDER BY nome, id_cliente
+                """;
+
+        List<Cliente> clientes = new ArrayList<>();
+
+        try (
+            Connection conexao = Conexao.conectar();
+            PreparedStatement comando =
+                    conexao.prepareStatement(sql);
+            ResultSet resultado = comando.executeQuery()
+        ) {
+
+            while (resultado.next()) {
+                clientes.add(criarCliente(resultado));
+            }
+        }
+
+        return clientes;
     }
 }

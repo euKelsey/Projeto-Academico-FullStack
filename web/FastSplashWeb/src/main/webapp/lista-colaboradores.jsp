@@ -3,12 +3,84 @@
     <%@ page import="java.util.List" %>
         <%@ page import="com.fastsplash.web.model.Colaborador" %>
 
-            <% List<Colaborador> colaboradores =
-                (List<Colaborador>)
-                    request.getAttribute(
-                    "colaboradores"
-                    );
-                    %>
+
+<%
+    List<Colaborador> colaboradores =
+        (List<Colaborador>) request.getAttribute("colaboradores");
+
+    String filtro = request.getParameter("filtro");
+
+    if (!"inativos".equals(filtro)
+            && !"excluidos".equals(filtro)) {
+        filtro = "ativos";
+    }
+
+    boolean administrador =
+        "ADMINISTRADOR".equals(
+            session.getAttribute("nivelAcesso"));
+
+    Colaborador usuarioAtual =
+        (Colaborador) session.getAttribute("usuarioLogado");
+
+    int idUsuarioLogado = usuarioAtual != null
+        ? usuarioAtual.getIdColaborador()
+        : -1;
+
+    String status = request.getParameter("status");
+    String erro = request.getParameter("erro");
+
+    String mensagemSucesso = switch (
+        status == null ? "" : status
+    ) {
+        case "inativado" ->
+            "Colaborador inativado com sucesso.";
+
+        case "reativado" ->
+            "Colaborador reativado com sucesso.";
+
+        case "excluido" ->
+            "Colaborador excluído com sucesso. Histórico preservado.";
+
+        case "restaurado" ->
+            "Colaborador restaurado com sucesso.";
+
+        default -> "";
+    };
+
+    String mensagemErro = switch (
+        erro == null ? "" : erro
+    ) {
+        case "ultimoAdministrador" ->
+            "O sistema precisa manter pelo menos um administrador ativo.";
+
+        case "proprioUsuario" ->
+            "Você não pode inativar ou excluir sua própria conta.";
+
+        case "pendencias" ->
+            "Este colaborador possui atendimentos pendentes.";
+
+        case "naoEncontrado" ->
+            "Colaborador não encontrado.";
+
+        case "jaAtivo" ->
+            "Este colaborador já está ativo.";
+
+        case "jaInativo" ->
+            "Este colaborador já está inativo.";
+
+        case "jaExcluido" ->
+            "Este colaborador já está excluído.";
+
+        case "naoExcluido" ->
+            "Este colaborador não está excluído.";
+
+        case "operacaoInvalida" ->
+            "Não foi possível realizar esta operação.";
+
+        default -> "";
+    };
+%>
+
 
                     <!DOCTYPE html>
 
@@ -25,52 +97,81 @@
                         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site.css">
             <link rel="stylesheet" href="${pageContext.request.contextPath}/css/interno.css">
 
-                    </head>
+                    <style>
+    .filtros-clientes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 20px;
+    }
+
+    .filtro-cliente {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 18px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .filtro-cliente:hover {
+        border-color: #f97316;
+    }
+
+    .filtro-selecionado {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: #ffffff;
+    }
+
+    .aviso-sucesso-cliente {
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .acoes-tabela {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .acoes-tabela form {
+        margin: 0;
+    }
+
+    .acao-status-cliente {
+        cursor: pointer;
+        padding: 7px 12px;
+        border: 1px solid currentColor;
+        border-radius: 6px;
+        font-weight: 600;
+        background: transparent;
+    }
+
+    .acao-inativar-cliente {
+        color: #b45309;
+    }
+
+    .acao-reativar-cliente {
+        color: #15803d;
+    }
+</style>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/menu-lateral.css">
+</head>
 
 
-                    <body class="pagina-interna">
+                    <body class="pagina-interna fs-layout">
+<jsp:include page="/WEB-INF/includes/menu-lateral.jsp" />
 
 
-                        <header class="interna-topo">
-
-                            <div class="container interna-topo-conteudo">
-
-                                <div class="marca-cabecalho">
-
-                                    <div class="marca-nome">
-
-                                        <span class="marca-fast">
-                                            Fast
-                                        </span>
-
-                                        <span class="marca-splash">
-                                            Splash
-                                        </span>
-
-                                    </div>
-
-                                    <span class="marca-subtitulo">
-                                        GESTÃO
-                                    </span>
-
-                                </div>
 
 
-                                <div class="interna-topo-acoes">
-
-                                    <a class="interna-link" href="${pageContext.request.contextPath}/dashboard.jsp">
-                                        ← Dashboard
-                                    </a>
-
-                                    <a class="interna-link" href="${pageContext.request.contextPath}/logout">
-                                        Sair
-                                    </a>
-
-                                </div>
-
-                            </div>
-
-                        </header>
 
 
                         <main class="interna-principal">
@@ -78,7 +179,20 @@
                             <div class="container">
 
 
-                                <section class="interna-cabecalho">
+
+<% if (!mensagemSucesso.isEmpty()) { %>
+    <div class="aviso-sucesso-cliente" role="status">
+        <strong><%= mensagemSucesso %></strong>
+    </div>
+<% } %>
+
+<% if (!mensagemErro.isEmpty()) { %>
+    <div class="aviso-interno" role="alert">
+        <strong><%= mensagemErro %></strong>
+    </div>
+<% } %>
+
+<section class="interna-cabecalho">
 
                                     <div>
 
@@ -107,6 +221,28 @@
 
 
                                 <section class="tabela-card">
+<nav class="filtros-clientes" aria-label="Status dos colaboradores">
+
+        <a class="filtro-cliente <%= "ativos".equals(filtro) ? "filtro-selecionado" : "" %>"
+           href="${pageContext.request.contextPath}/colaborador?filtro=ativos">
+            Ativos
+        </a>
+
+        <% if (administrador) { %>
+
+        <a class="filtro-cliente <%= "inativos".equals(filtro) ? "filtro-selecionado" : "" %>"
+           href="${pageContext.request.contextPath}/colaborador?filtro=inativos">
+            Inativos
+        </a>
+
+        <a class="filtro-cliente <%= "excluidos".equals(filtro) ? "filtro-selecionado" : "" %>"
+           href="${pageContext.request.contextPath}/colaborador?filtro=excluidos">
+            Excluídos
+        </a>
+
+        <% } %>
+
+    </nav>
 
                                     <div class="tabela-pesquisa">
 
@@ -146,9 +282,8 @@
                                                             E-mail
                                                         </th>
 
-                                                        <th>
-                                                            Ações
-                                                        </th>
+                                                        <th>Status</th>
+<th>Ações</th>
 
                                                     </tr>
 
@@ -225,34 +360,121 @@
                                                             </td>
 
 
-                                                            <td>
 
-                                                                <div class="acoes-tabela">
+<td>
+    <span class="status-badge <%= colaborador.isAtivo()
+        ? "status-pagamento-pago"
+        : "status-pagamento-pendente" %>">
 
-                                                                    <a class="acao-editar"
-                                                                        href="${pageContext.request.contextPath}/colaborador?acao=editar&idColaborador=<%= colaborador.getIdColaborador() %>">
-                                                                        Editar
-                                                                    </a>
+        <%= colaborador.isExcluido()
+            ? "Excluído"
+            : colaborador.isAtivo()
+                ? "Ativo"
+                : "Inativo" %>
 
+    </span>
+</td>
 
-                                                                    <form
-                                                                        action="${pageContext.request.contextPath}/colaborador"
-                                                                        method="post">
+<td>
 
-                                                                        <input type="hidden" name="acao"
-                                                                            value="excluir">
+<div class="acoes-tabela">
 
-                                                                        <input type="hidden" name="idColaborador"
-                                                                            value="<%= colaborador.getIdColaborador() %>">
+    <% if ("ativos".equals(filtro)) { %>
 
-                                                                        <button class="acao-excluir" type="submit"
-                                                                            onclick="return confirm('Deseja realmente excluir este colaborador?');">
-                                                                            Excluir
-                                                                        </button>
+        <a class="acao-editar"
+           href="${pageContext.request.contextPath}/colaborador?acao=editar&idColaborador=<%= colaborador.getIdColaborador() %>">
+            Editar
+        </a>
 
-                                                                    </form>
+    <% } %>
 
-                                                                </div>
+    <% if (administrador) { %>
+
+        <% if ("ativos".equals(filtro)
+                && colaborador.getIdColaborador() != idUsuarioLogado) { %>
+
+            <form action="${pageContext.request.contextPath}/colaborador"
+                  method="post">
+
+                <input type="hidden" name="acao" value="inativar">
+                <input type="hidden" name="filtro" value="<%= filtro %>">
+                <input type="hidden" name="idColaborador"
+                       value="<%= colaborador.getIdColaborador() %>">
+
+                <button class="acao-status-cliente acao-inativar-cliente"
+                        type="submit"
+                        onclick="return confirm('Deseja inativar este colaborador?');">
+                    Inativar
+                </button>
+
+            </form>
+
+        <% } %>
+
+        <% if ("inativos".equals(filtro)) { %>
+
+            <form action="${pageContext.request.contextPath}/colaborador"
+                  method="post">
+
+                <input type="hidden" name="acao" value="reativar">
+                <input type="hidden" name="filtro" value="<%= filtro %>">
+                <input type="hidden" name="idColaborador"
+                       value="<%= colaborador.getIdColaborador() %>">
+
+                <button class="acao-status-cliente acao-reativar-cliente"
+                        type="submit">
+                    Reativar
+                </button>
+
+            </form>
+
+        <% } %>
+
+        <% if (!"excluidos".equals(filtro)
+                && colaborador.getIdColaborador() != idUsuarioLogado) { %>
+
+            <form action="${pageContext.request.contextPath}/colaborador"
+                  method="post">
+
+                <input type="hidden" name="acao" value="excluir">
+                <input type="hidden" name="filtro" value="<%= filtro %>">
+                <input type="hidden" name="idColaborador"
+                       value="<%= colaborador.getIdColaborador() %>">
+
+                <button class="acao-excluir"
+                        type="submit"
+                        onclick="return confirm('Deseja excluir este colaborador?');">
+                    Excluir
+                </button>
+
+            </form>
+
+        <% } %>
+
+        <% if ("excluidos".equals(filtro)) { %>
+
+            <form action="${pageContext.request.contextPath}/colaborador"
+                  method="post">
+
+                <input type="hidden" name="acao" value="restaurar">
+                <input type="hidden" name="filtro" value="<%= filtro %>">
+                <input type="hidden" name="idColaborador"
+                       value="<%= colaborador.getIdColaborador() %>">
+
+                <button class="acao-status-cliente acao-reativar-cliente"
+                        type="submit"
+                        onclick="return confirm('Deseja restaurar este colaborador?');">
+                    Restaurar
+                </button>
+
+            </form>
+
+        <% } %>
+
+    <% } %>
+
+</div>
+
 
                                                             </td>
 
@@ -272,7 +494,7 @@
 
                                                 <div class="estado-vazio">
 
-                                                    Nenhum colaborador cadastrado.
+                                                    Nenhum colaborador encontrado nesta categoria.
 
                                                 </div>
 
@@ -370,6 +592,7 @@
 
                         </script>
 
-                    </body>
+                    <script src="${pageContext.request.contextPath}/js/menu-lateral.js"></script>
+</body>
 
                     </html>

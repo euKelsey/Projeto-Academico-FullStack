@@ -26,52 +26,28 @@
 
                     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/atendimentos.css">
 
-                </head>
+                <link rel="stylesheet" href="${pageContext.request.contextPath}/css/menu-lateral.css">
+</head>
 
 
-                <body class="pagina-interna">
+                <body class="pagina-interna fs-layout">
+<jsp:include page="/WEB-INF/includes/menu-lateral.jsp" />
+
 
 
                     <header class="interna-topo">
-
-                        <div class="container interna-topo-conteudo">
-
-                            <div class="marca-cabecalho">
-
-                                <div class="marca-nome">
-
-                                    <span class="marca-fast">
-                                        Fast
-                                    </span>
-
-                                    <span class="marca-splash">
-                                        Splash
-                                    </span>
-
-                                </div>
-
-                                <span class="marca-subtitulo">
-                                    GESTÃO
-                                </span>
-
-                            </div>
-
-
-                            <div class="interna-topo-acoes">
-
-                                <a class="interna-link" href="${pageContext.request.contextPath}/atendimento">
+    <div class="container interna-topo-conteudo">
+        <div class="interna-topo-acoes">
+<a class="interna-link" href="${pageContext.request.contextPath}/atendimento?filtro=<%=
+        atendimento.isArquivado() ? "arquivados"
+        : "FINALIZADO".equals(status) ? "finalizados"
+        : "EM_LAVAGEM".equals(status) ? "emLavagem"
+        : "aguardando" %>">
                                     ← Atendimentos
                                 </a>
-
-                                <a class="interna-link" href="${pageContext.request.contextPath}/dashboard.jsp">
-                                    Dashboard
-                                </a>
-
-                            </div>
-
-                        </div>
-
-                    </header>
+        </div>
+    </div>
+</header>
 
 
                     <main class="interna-principal">
@@ -92,7 +68,7 @@
                                     </h1>
 
                                     <p>
-                                        Informações completas do serviço em andamento.
+                                        Informações completas e histórico do atendimento.
                                     </p>
 
                                 </div>
@@ -100,6 +76,9 @@
 
                                 <span class="status-badge <%= classeStatus %>">
                                     <%= status %>
+        <% if (atendimento.isArquivado()) { %>
+            · Arquivado
+        <% } %>
                                 </span>
 
                             </section>
@@ -170,6 +149,9 @@
 
                                         <strong>
                                             <%= status %>
+        <% if (atendimento.isArquivado()) { %>
+            · Arquivado
+        <% } %>
                                         </strong>
 
                                     </div>
@@ -226,7 +208,7 @@
 
                                 <div class="atendimento-fluxo">
 
-                                    <span class="fluxo-etapa <%= " AGUARDANDO".equals(status) ? "ativa" : "" %>"
+                                    <span class="fluxo-etapa <%= "AGUARDANDO".equals(status) ? "ativa" : "" %>"
                                         >
                                         Aguardando
                                     </span>
@@ -235,7 +217,7 @@
                                         →
                                     </span>
 
-                                    <span class="fluxo-etapa <%= " EM_LAVAGEM".equals(status) ? "ativa" : "" %>"
+                                    <span class="fluxo-etapa <%= "EM_LAVAGEM".equals(status) ? "ativa" : "" %>"
                                         >
                                         Em lavagem
                                     </span>
@@ -244,7 +226,7 @@
                                         →
                                     </span>
 
-                                    <span class="fluxo-etapa <%= " FINALIZADO".equals(status) ? "ativa" : "" %>"
+                                    <span class="fluxo-etapa <%= "FINALIZADO".equals(status) ? "ativa" : "" %>"
                                         >
                                         Finalizado
                                     </span>
@@ -258,6 +240,7 @@
                     </main>
 
 
-                </body>
+                <script src="${pageContext.request.contextPath}/js/menu-lateral.js"></script>
+</body>
 
                 </html>

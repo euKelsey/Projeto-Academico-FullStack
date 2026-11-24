@@ -1,6 +1,19 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
-    <!DOCTYPE html>
+
+<%
+    String fsNivelAcesso =
+        (String) session.getAttribute("nivelAcesso");
+
+    boolean fsColaboradorLogado =
+        session.getAttribute("usuarioLogado") != null
+        && (
+            "ADMINISTRADOR".equals(fsNivelAcesso)
+            || "ATENDENTE".equals(fsNivelAcesso)
+        );
+%>
+
+<!DOCTYPE html>
     <html lang="pt-BR">
 
     <head>
@@ -12,10 +25,13 @@
 
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/interno.css">
 
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site-publico.css">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site-publico.css?v=2">
     </head>
 
     <body>
+
+
+
 
         <!-- CABEÇALHO -->
         <header class="cabecalho">
@@ -42,7 +58,17 @@
                     <a href="#promocoes">Promoções</a>
                     <a href="#aplicativo">Aplicativo</a>
 
-                    <a class="menu-cadastro" href="${pageContext.request.contextPath}/cadastro.jsp">
+
+<% if (fsColaboradorLogado) { %>
+
+    <a class="fs-retornar-painel"
+       href="${pageContext.request.contextPath}/dashboard">
+        Painel administrativo
+    </a>
+
+<% } %>
+
+<a class="menu-cadastro" href="${pageContext.request.contextPath}/cadastro.jsp">
                         Criar minha conta
                     </a>
                 </nav>
@@ -693,9 +719,23 @@
                         Acesso exclusivo para colaboradores.
                     </p>
 
-                    <a class="rodape-login" href="${pageContext.request.contextPath}/login.jsp">
-                        Entrar
-                    </a>
+
+<% if (fsColaboradorLogado) { %>
+
+    <a class="rodape-login"
+       href="${pageContext.request.contextPath}/dashboard">
+        Painel administrativo
+    </a>
+
+<% } else { %>
+
+    <a class="rodape-login"
+       href="${pageContext.request.contextPath}/login.jsp">
+        Entrar
+    </a>
+
+<% } %>
+
 
                 </div>
 

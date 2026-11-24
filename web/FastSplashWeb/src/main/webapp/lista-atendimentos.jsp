@@ -24,7 +24,40 @@
                                     DateTimeFormatter.ofPattern(
                                     "dd/MM/yyyy HH:mm"
                                     );
-                                    %>
+
+    String filtro = request.getParameter("filtro");
+
+    if (!"emLavagem".equals(filtro)
+            && !"finalizados".equals(filtro)
+            && !"arquivados".equals(filtro)) {
+
+        filtro = "aguardando";
+    }
+
+    boolean administrador =
+        "ADMINISTRADOR".equals(
+            session.getAttribute("nivelAcesso"));
+
+    String resultado = request.getParameter("status");
+
+    String mensagemSucesso = switch (
+        resultado == null ? "" : resultado
+    ) {
+        case "arquivado" ->
+            "Atendimento arquivado com sucesso.";
+
+        case "restaurado" ->
+            "Atendimento restaurado com sucesso.";
+
+        default -> "";
+    };
+
+    if ("operacaoInvalida".equals(
+            request.getParameter("erro"))) {
+
+        erro = "Somente atendimentos finalizados podem ser arquivados ou restaurados conforme seu estado atual.";
+    }
+%>
 
                                     <!DOCTYPE html>
 
@@ -44,49 +77,81 @@
                                         <link rel="stylesheet"
                                             href="${pageContext.request.contextPath}/css/atendimentos.css">
 
-                                    </head>
+                                    <style>
+    .filtros-clientes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 20px;
+    }
+
+    .filtro-cliente {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 18px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .filtro-cliente:hover {
+        border-color: #f97316;
+    }
+
+    .filtro-selecionado {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: #ffffff;
+    }
+
+    .aviso-sucesso-cliente {
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .acoes-tabela {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .acoes-tabela form {
+        margin: 0;
+    }
+
+    .acao-status-cliente {
+        cursor: pointer;
+        padding: 7px 12px;
+        border: 1px solid currentColor;
+        border-radius: 6px;
+        font-weight: 600;
+        background: transparent;
+    }
+
+    .acao-inativar-cliente {
+        color: #b45309;
+    }
+
+    .acao-reativar-cliente {
+        color: #15803d;
+    }
+</style>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/menu-lateral.css">
+</head>
 
 
-                                    <body class="pagina-interna">
+                                    <body class="pagina-interna fs-layout">
+<jsp:include page="/WEB-INF/includes/menu-lateral.jsp" />
 
 
-                                        <header class="interna-topo">
-
-                                            <div class="container interna-topo-conteudo">
-
-                                                <div class="marca-cabecalho">
-
-                                                    <div class="marca-nome">
-
-                                                        <span class="marca-fast">
-                                                            Fast
-                                                        </span>
-
-                                                        <span class="marca-splash">
-                                                            Splash
-                                                        </span>
-
-                                                    </div>
-
-                                                    <span class="marca-subtitulo">
-                                                        GESTÃO
-                                                    </span>
-
-                                                </div>
 
 
-                                                <div class="interna-topo-acoes">
-
-                                                    <a class="interna-link"
-                                                        href="${pageContext.request.contextPath}/dashboard.jsp">
-                                                        ← Dashboard
-                                                    </a>
-
-                                                </div>
-
-                                            </div>
-
-                                        </header>
 
 
                                         <main class="interna-principal">
@@ -94,7 +159,14 @@
                                             <div class="container">
 
 
-                                                <section class="interna-cabecalho">
+
+<% if (!mensagemSucesso.isEmpty()) { %>
+    <div class="aviso-sucesso-cliente" role="status">
+        <strong><%= mensagemSucesso %></strong>
+    </div>
+<% } %>
+
+<section class="interna-cabecalho">
 
                                                     <div>
 
@@ -126,7 +198,7 @@
 
                                                     <div class="estado-vazio"
                                                         style="margin-bottom: 18px; border: 1px solid rgba(255, 138, 31, 0.45);">
-                                                        <strong>Não foi possível iniciar o atendimento.</strong>
+                                                        <strong>Não foi possível realizar a operação.</strong>
                                                         <br>
                                                         <%= erro %>
                                                     </div>
@@ -135,6 +207,33 @@
 
 
                                                         <section class="tabela-card">
+<nav class="filtros-clientes" aria-label="Status dos atendimentos">
+
+    <a class="filtro-cliente <%= "aguardando".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/atendimento?filtro=aguardando">
+        Aguardando
+    </a>
+
+    <a class="filtro-cliente <%= "emLavagem".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/atendimento?filtro=emLavagem">
+        Em lavagem
+    </a>
+
+    <a class="filtro-cliente <%= "finalizados".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/atendimento?filtro=finalizados">
+        Finalizados
+    </a>
+
+    <a class="filtro-cliente <%= "arquivados".equals(filtro)
+        ? "filtro-selecionado" : "" %>"
+       href="${pageContext.request.contextPath}/atendimento?filtro=arquivados">
+        Arquivados
+    </a>
+</nav>
+
 
                                                             <div class="tabela-pesquisa">
 
@@ -259,6 +358,9 @@
                                                                                         <span
                                                                                             class="status-badge <%= classeStatus %>">
                                                                                             <%= status %>
+        <% if (atendimento.isArquivado()) { %>
+            <small> · Arquivado</small>
+        <% } %>
                                                                                         </span>
 
                                                                                     </td>
@@ -266,8 +368,7 @@
 
                                                                                     <td>
 
-                                                                                        <span <% String
-                                                                                            classePagamento=pagamentoPago
+                                                                                        <% String classePagamento=pagamentoPago
                                                                                             ? "status-finalizado"
                                                                                             : "status-aguardando" ; %>
 
@@ -415,7 +516,49 @@
 
                                                                                                             <% } %>
 
-                                                                                        </div>
+
+    <% if (administrador
+            && "FINALIZADO".equals(status)) { %>
+
+        <% if (atendimento.isArquivado()) { %>
+
+            <form action="${pageContext.request.contextPath}/atendimento"
+                  method="post">
+
+                <input type="hidden" name="acao" value="restaurar">
+                <input type="hidden" name="filtro" value="<%= filtro %>">
+                <input type="hidden" name="idAtendimento"
+                       value="<%= atendimento.getIdAtendimento() %>">
+
+                <button class="acao-status-cliente acao-reativar-cliente"
+                        type="submit">
+                    Restaurar
+                </button>
+
+            </form>
+
+        <% } else { %>
+
+            <form action="${pageContext.request.contextPath}/atendimento"
+                  method="post">
+
+                <input type="hidden" name="acao" value="arquivar">
+                <input type="hidden" name="filtro" value="<%= filtro %>">
+                <input type="hidden" name="idAtendimento"
+                       value="<%= atendimento.getIdAtendimento() %>">
+
+                <button class="acao-status-cliente acao-inativar-cliente"
+                        type="submit"
+                        onclick="return confirm('Deseja arquivar este atendimento?');">
+                    Arquivar
+                </button>
+
+            </form>
+
+        <% } %>
+
+    <% } %>
+</div>
 
                                                                                     </td>
 
@@ -433,7 +576,7 @@
                                                                     <% } else { %>
 
                                                                         <div class="estado-vazio">
-                                                                            Nenhum atendimento cadastrado.
+                                                                            Nenhum atendimento encontrado nesta categoria.
                                                                         </div>
 
                                                                         <% } %>
@@ -530,6 +673,7 @@
                                         </script>
 
 
-                                    </body>
+                                    <script src="${pageContext.request.contextPath}/js/menu-lateral.js"></script>
+</body>
 
                                     </html>

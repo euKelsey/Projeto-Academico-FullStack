@@ -272,6 +272,8 @@ public class AgendamentoApiServlet
 
             if (
                 veiculo == null ||
+                !veiculo.isAtivo() ||
+                veiculo.isExcluido() ||
                 veiculo.getIdCliente()
                     != cliente.getIdCliente()
             ) {
@@ -322,12 +324,14 @@ public class AgendamentoApiServlet
                         );
 
 
-                if (servico == null) {
+                if (servico == null
+                        || !servico.isAtivo()
+                        || servico.isExcluido()) {
 
                     responderErro(
                             response,
                             HttpServletResponse.SC_BAD_REQUEST,
-                            "Serviço inválido."
+                            "Serviço inválido ou indisponível para agendamento."
                     );
 
                     return;
@@ -426,7 +430,7 @@ public class AgendamentoApiServlet
             responderErro(
                     response,
                     HttpServletResponse.SC_BAD_REQUEST,
-                    "Serviço inválido."
+                    "Serviço inválido ou indisponível para agendamento."
             );
 
 

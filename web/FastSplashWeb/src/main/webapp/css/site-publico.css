@@ -1784,3 +1784,34 @@
 .menu a.menu-cadastro::after {
     display: none;
 }
+
+/* ACESSO ADMINISTRATIVO NO CABECALHO */
+
+a.fs-retornar-painel {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 44px;
+    padding: 0 16px !important;
+
+    border: 1px solid #18c8ff !important;
+    border-radius: 10px !important;
+
+    background: rgba(24, 200, 255, 0.08) !important;
+    color: #18c8ff !important;
+
+    font-size: 13px;
+    font-weight: 700 !important;
+    text-decoration: none;
+    white-space: nowrap;
+
+    transition: all 0.2s ease;
+}
+
+a.fs-retornar-painel:hover {
+    background: rgba(24, 200, 255, 0.20) !important;
+    color: #ffffff !important;
+
+    box-shadow: 0 0 14px rgba(24, 200, 255, 0.18);
+}

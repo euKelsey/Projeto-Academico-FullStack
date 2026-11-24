@@ -51,6 +51,9 @@ public class AgendamentoDAO {
                 SELECT preco
                 FROM servico
                 WHERE id_servico = ?
+                  AND ativo = TRUE
+                  AND excluido_em IS NULL
+                FOR UPDATE
                 """;
 
 
@@ -71,6 +74,11 @@ public class AgendamentoDAO {
         try {
 
             conexao.setAutoCommit(false);
+
+            validarVeiculoDisponivel(
+                    conexao,
+                    agendamento.getIdVeiculo()
+            );
 
 
             // =================================
@@ -234,6 +242,7 @@ public class AgendamentoDAO {
                     a.data,
                     a.horario,
                     a.status,
+                    a.arquivado_em,
                     c.nome AS cliente,
 
                     CONCAT(
@@ -279,6 +288,7 @@ public class AgendamentoDAO {
                     a.data,
                     a.horario,
                     a.status,
+                    a.arquivado_em,
                     c.nome,
                     v.marca,
                     v.modelo,
@@ -324,6 +334,121 @@ public class AgendamentoDAO {
     // READ - BUSCAR POR ID
     // =========================================
 
+    public List<Agendamento> listarPorStatus(String filtro)
+            throws SQLException {
+
+        String condicao = switch (
+                filtro == null ? "agendados" : filtro
+        ) {
+            case "concluidos" ->
+                "a.status = 'CONCLUIDO' AND a.arquivado_em IS NULL";
+
+            case "cancelados" ->
+                "a.status = 'CANCELADO' AND a.arquivado_em IS NULL";
+
+            case "arquivados" ->
+                "a.arquivado_em IS NOT NULL";
+
+            default ->
+                "a.status = 'AGENDADO' AND a.arquivado_em IS NULL";
+        };
+
+        String sql = """
+                SELECT
+                    a.id_agendamento,
+                    a.id_veiculo,
+                    a.data,
+                    a.horario,
+                    a.status,
+                    a.arquivado_em,
+                    c.nome AS cliente,
+
+                    CONCAT(
+                        v.marca,
+                        ' ',
+                        v.modelo,
+                        ' - ',
+                        v.placa
+                    ) AS veiculo,
+
+                    GROUP_CONCAT(
+                        s.nome
+                        ORDER BY s.nome
+                        SEPARATOR ', '
+                    ) AS servicos,
+
+                    COALESCE(
+                        SUM(ags.valor_praticado),
+                        0
+                    ) AS valor_total
+
+                FROM agendamento a
+
+                INNER JOIN veiculo v
+                    ON v.id_veiculo =
+                       a.id_veiculo
+
+                INNER JOIN cliente c
+                    ON c.id_cliente =
+                       v.id_cliente
+
+                LEFT JOIN agendamento_servico ags
+                    ON ags.id_agendamento =
+                       a.id_agendamento
+
+                LEFT JOIN servico s
+                    ON s.id_servico =
+                       ags.id_servico
+
+                WHERE %s
+
+                GROUP BY
+                    a.id_agendamento,
+                    a.id_veiculo,
+                    a.data,
+                    a.horario,
+                    a.status,
+                    a.arquivado_em,
+                    c.nome,
+                    v.marca,
+                    v.modelo,
+                    v.placa
+
+                ORDER BY
+                    a.data DESC,
+                    a.horario DESC
+                """.formatted(condicao);
+
+
+        List<Agendamento> agendamentos =
+                new ArrayList<>();
+
+
+        try (
+            Connection conexao =
+                    Conexao.conectar();
+
+            PreparedStatement comando =
+                    conexao.prepareStatement(sql);
+
+            ResultSet resultado =
+                    comando.executeQuery()
+        ) {
+
+            while (resultado.next()) {
+
+                agendamentos.add(
+                        criarAgendamento(
+                                resultado
+                        )
+                );
+            }
+        }
+
+
+        return agendamentos;
+    }
+
     public Agendamento buscarPorId(
             int idAgendamento
     ) throws SQLException {
@@ -335,6 +460,7 @@ public class AgendamentoDAO {
                     a.data,
                     a.horario,
                     a.status,
+                    a.arquivado_em,
                     c.nome AS cliente,
 
                     CONCAT(
@@ -382,6 +508,7 @@ public class AgendamentoDAO {
                     a.data,
                     a.horario,
                     a.status,
+                    a.arquivado_em,
                     c.nome,
                     v.marca,
                     v.modelo,
@@ -818,6 +945,114 @@ public boolean cancelarDoCliente(
         );
 
 
+        agendamento.setArquivadoEm(
+                resultado.getObject(
+                        "arquivado_em",
+                        java.time.LocalDateTime.class)
+        );
+
         return agendamento;
     }
+
+    private void validarVeiculoDisponivel(
+            Connection conexao,
+            int idVeiculo
+    ) throws SQLException {
+
+        String sql = """
+                SELECT v.id_veiculo
+                FROM veiculo v
+                INNER JOIN cliente c
+                    ON c.id_cliente = v.id_cliente
+                WHERE v.id_veiculo = ?
+                  AND v.ativo = TRUE
+                  AND v.excluido_em IS NULL
+                  AND c.ativo = TRUE
+                  AND c.excluido_em IS NULL
+                FOR UPDATE
+                """;
+
+        try (PreparedStatement comando =
+                conexao.prepareStatement(sql)) {
+
+            comando.setInt(1, idVeiculo);
+
+            try (ResultSet resultado =
+                    comando.executeQuery()) {
+
+                if (!resultado.next()) {
+
+                    throw new SQLException(
+                            "O veículo ou seu proprietário está indisponível."
+                    );
+                }
+            }
+        }
+    }
+
+
+    public boolean arquivarAgendamento(
+            int idAgendamento
+    ) throws SQLException {
+
+        String sql = """
+                UPDATE agendamento a
+                SET a.arquivado_em = CURRENT_TIMESTAMP
+
+                WHERE a.id_agendamento = ?
+                  AND a.arquivado_em IS NULL
+                  AND a.status IN (
+                      'CANCELADO', 'CONCLUIDO'
+                  )
+
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM atendimento at
+                      WHERE at.id_agendamento =
+                            a.id_agendamento
+                        AND at.status IN (
+                            'AGUARDANDO', 'EM_LAVAGEM'
+                        )
+                  )
+
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM pagamento p
+                      WHERE p.id_agendamento =
+                            a.id_agendamento
+                        AND p.status_pagamento = 'PENDENTE'
+                  )
+                """;
+
+        try (Connection conexao = Conexao.conectar();
+             PreparedStatement comando =
+                     conexao.prepareStatement(sql)) {
+
+            comando.setInt(1, idAgendamento);
+
+            return comando.executeUpdate() == 1;
+        }
+    }
+
+    public boolean restaurarAgendamento(
+            int idAgendamento
+    ) throws SQLException {
+
+        String sql = """
+                UPDATE agendamento
+                SET arquivado_em = NULL
+                WHERE id_agendamento = ?
+                  AND arquivado_em IS NOT NULL
+                """;
+
+        try (Connection conexao = Conexao.conectar();
+             PreparedStatement comando =
+                     conexao.prepareStatement(sql)) {
+
+            comando.setInt(1, idAgendamento);
+
+            return comando.executeUpdate() == 1;
+        }
+    }
+
 }

@@ -6,6 +6,9 @@ import java.util.Locale;
 
 import com.fastsplash.web.dao.ClienteDAO;
 import com.fastsplash.web.dao.VeiculoDAO;
+import com.fastsplash.web.dao.ResultadoStatusVeiculo;
+import com.fastsplash.web.model.Cliente;
+import jakarta.servlet.http.HttpSession;
 import com.fastsplash.web.model.Veiculo;
 
 import jakarta.servlet.ServletException;
@@ -90,7 +93,7 @@ public class VeiculoServlet extends HttpServlet {
                                 idVeiculo
                         );
 
-                if (veiculo == null) {
+                if (veiculo == null || !veiculo.isAtivo() || veiculo.isExcluido()) {
 
                     response.sendError(
                             HttpServletResponse.SC_NOT_FOUND,
@@ -135,9 +138,22 @@ public class VeiculoServlet extends HttpServlet {
 
         try {
 
+            String filtro = normalizarFiltro(
+                    request.getParameter("filtro"));
+
+            if (!"ativos".equals(filtro)
+                    && !usuarioAdministrador(request)) {
+
+                response.sendError(
+                        HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+
+            request.setAttribute("filtro", filtro);
+
             request.setAttribute(
                     "veiculos",
-                    veiculoDAO.listarTodos()
+                    veiculoDAO.listarPorStatus(filtro)
             );
 
             /*
@@ -147,7 +163,7 @@ public class VeiculoServlet extends HttpServlet {
              */
             request.setAttribute(
                     "clientes",
-                    clienteDAO.listarTodos()
+                    clienteDAO.listarTodosParaHistorico()
             );
 
             request.getRequestDispatcher(
@@ -266,13 +282,20 @@ public class VeiculoServlet extends HttpServlet {
                                 idVeiculo
                         );
 
-                if (veiculo == null) {
+                if (veiculo == null || !veiculo.isAtivo() || veiculo.isExcluido()) {
 
                     response.sendError(
                             HttpServletResponse.SC_NOT_FOUND,
                             "Veículo não encontrado."
                     );
 
+                    return;
+                }
+
+                if (!clienteDisponivel(idCliente)) {
+                    response.sendError(
+                            HttpServletResponse.SC_CONFLICT,
+                            "O proprietario precisa estar ativo.");
                     return;
                 }
 
@@ -321,37 +344,15 @@ public class VeiculoServlet extends HttpServlet {
         // EXCLUIR VEÍCULO
         // =========================================
 
-        if ("excluir".equals(acao)) {
 
-            int idVeiculo =
-                    Integer.parseInt(
-                            request.getParameter(
-                                    "idVeiculo"
-                            )
-                    );
+        if ("inativar".equals(acao)
+                || "reativar".equals(acao)
+                || "excluir".equals(acao)
+                || "restaurar".equals(acao)) {
 
-            try {
-
-                veiculoDAO.excluir(
-                        idVeiculo
-                );
-
-                response.sendRedirect(
-                        request.getContextPath()
-                        + "/veiculo"
-                );
-
-            } catch (SQLException e) {
-
-                throw new ServletException(
-                        "Erro ao excluir veículo.",
-                        e
-                );
-            }
-
+            processarStatus(request, response, acao);
             return;
         }
-
 
         // =========================================
         // CADASTRAR VEÍCULO
@@ -453,6 +454,13 @@ public class VeiculoServlet extends HttpServlet {
 
         try {
 
+            if (!clienteDisponivel(idCliente)) {
+                response.sendError(
+                        HttpServletResponse.SC_CONFLICT,
+                        "O proprietario precisa estar ativo.");
+                return;
+            }
+
             veiculoDAO.inserir(
                     veiculo
             );
@@ -471,6 +479,126 @@ public class VeiculoServlet extends HttpServlet {
         }
     }
 
+
+
+    private boolean clienteDisponivel(
+            int idCliente
+    ) throws SQLException {
+
+        Cliente cliente = clienteDAO.buscarPorId(idCliente);
+
+        return cliente != null
+                && cliente.isAtivo()
+                && !cliente.isExcluido();
+    }
+
+    private boolean usuarioAdministrador(
+            HttpServletRequest request
+    ) {
+
+        HttpSession sessao = request.getSession(false);
+
+        return sessao != null
+                && "ADMINISTRADOR".equals(
+                        sessao.getAttribute("nivelAcesso"));
+    }
+
+    private String normalizarFiltro(String filtro) {
+
+        if ("inativos".equals(filtro)
+                || "excluidos".equals(filtro)) {
+            return filtro;
+        }
+
+        return "ativos";
+    }
+
+    private void processarStatus(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String acao
+    ) throws ServletException, IOException {
+
+        if (!usuarioAdministrador(request)) {
+
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Apenas administradores podem alterar o status dos veiculos.");
+            return;
+        }
+
+        int idVeiculo;
+
+        try {
+
+            idVeiculo = Integer.parseInt(
+                    request.getParameter("idVeiculo"));
+
+            if (idVeiculo <= 0) {
+                throw new NumberFormatException();
+            }
+
+        } catch (NumberFormatException e) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "ID do veiculo invalido.");
+            return;
+        }
+
+        String filtro = normalizarFiltro(
+                request.getParameter("filtro"));
+
+        try {
+
+            ResultadoStatusVeiculo resultado = switch (acao) {
+
+                case "inativar" ->
+                    veiculoDAO.inativarVeiculo(idVeiculo);
+
+                case "reativar" ->
+                    veiculoDAO.reativarVeiculo(idVeiculo);
+
+                case "excluir" ->
+                    veiculoDAO.excluirLogicamente(idVeiculo);
+
+                case "restaurar" ->
+                    veiculoDAO.restaurarVeiculo(idVeiculo);
+
+                default ->
+                    throw new IllegalArgumentException("Acao invalida.");
+            };
+
+            String mensagem = switch (resultado) {
+
+                case SUCESSO -> "status=" + switch (acao) {
+                    case "inativar" -> "inativado";
+                    case "reativar" -> "reativado";
+                    case "excluir" -> "excluido";
+                    case "restaurar" -> "restaurado";
+                    default -> "sucesso";
+                };
+
+                case POSSUI_PENDENCIAS -> "erro=pendencias";
+                case JA_ATIVO -> "erro=jaAtivo";
+                case JA_INATIVO -> "erro=jaInativo";
+                case JA_EXCLUIDO -> "erro=jaExcluido";
+                case NAO_EXCLUIDO -> "erro=naoExcluido";
+                case CLIENTE_INATIVO -> "erro=clienteInativo";
+                case VEICULO_NAO_ENCONTRADO -> "erro=naoEncontrado";
+            };
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/veiculo?filtro=" + filtro
+                    + "&" + mensagem);
+
+        } catch (SQLException e) {
+
+            throw new ServletException(
+                    "Erro ao alterar status do veiculo.", e);
+        }
+    }
 
     private String limpar(
             String valor

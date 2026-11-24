@@ -9,7 +9,53 @@
                     );
                     %>
 
-                    <!DOCTYPE html>
+
+<%
+    String filtro = (String) request.getAttribute("filtro");
+
+    if (!"inativos".equals(filtro)
+            && !"excluidos".equals(filtro)) {
+        filtro = "ativos";
+    }
+
+    boolean administrador =
+        "ADMINISTRADOR".equals(
+            session.getAttribute("nivelAcesso")
+        );
+
+    String status = request.getParameter("status");
+    String erro = request.getParameter("erro");
+
+    String mensagemSucesso = "";
+
+    if ("inativado".equals(status)) {
+        mensagemSucesso = "Cliente inativado com sucesso.";
+    } else if ("reativado".equals(status)) {
+        mensagemSucesso = "Cliente reativado com sucesso.";
+    } else if ("excluido".equals(status)) {
+        mensagemSucesso = "Cliente excluido com sucesso. Historico preservado.";
+    } else if ("restaurado".equals(status)) {
+        mensagemSucesso = "Cliente restaurado com sucesso.";
+    }
+
+    String mensagemErro = "";
+
+    if ("pendencias".equals(erro)) {
+        mensagemErro = "O cliente possui agendamentos ou atendimentos pendentes.";
+    } else if ("jaInativo".equals(erro)) {
+        mensagemErro = "Este cliente ja esta inativo.";
+    } else if ("jaAtivo".equals(erro)) {
+        mensagemErro = "Este cliente ja esta ativo.";
+    } else if ("jaExcluido".equals(erro)) {
+        mensagemErro = "Este cliente ja foi excluido.";
+    } else if ("naoExcluido".equals(erro)) {
+        mensagemErro = "Este cliente nao esta excluido.";
+    } else if ("naoEncontrado".equals(erro)) {
+        mensagemErro = "Cliente nao encontrado.";
+    }
+%>
+
+<!DOCTYPE html>
 
                     <html lang="pt-BR">
 
@@ -24,75 +70,104 @@
                         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site.css">
                         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/interno.css">
 
-                    </head>
+
+<style>
+    .filtros-clientes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 20px;
+    }
+
+    .filtro-cliente {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 18px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .filtro-cliente:hover {
+        border-color: #f97316;
+    }
+
+    .filtro-selecionado {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: #ffffff;
+    }
+
+    .aviso-sucesso-cliente {
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .acoes-tabela {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .acoes-tabela form {
+        margin: 0;
+    }
+
+    .acao-status-cliente {
+        cursor: pointer;
+        padding: 7px 12px;
+        border: 1px solid currentColor;
+        border-radius: 6px;
+        font-weight: 600;
+        background: transparent;
+    }
+
+    .acao-inativar-cliente {
+        color: #b45309;
+    }
+
+    .acao-reativar-cliente {
+        color: #15803d;
+    }
+</style>
+
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/menu-lateral.css">
+</head>
 
 
-                    <body class="pagina-interna">
+                    <body class="pagina-interna fs-layout">
+<jsp:include page="/WEB-INF/includes/menu-lateral.jsp" />
 
 
-                        <header class="interna-topo">
-
-                            <div class="container interna-topo-conteudo">
-
-                                <div class="marca-cabecalho">
-
-                                    <div class="marca-nome">
-
-                                        <span class="marca-fast">
-                                            Fast
-                                        </span>
-
-                                        <span class="marca-splash">
-                                            Splash
-                                        </span>
-
-                                    </div>
-
-                                    <span class="marca-subtitulo">
-                                        GESTÃO
-                                    </span>
-
-                                </div>
 
 
-                                <div class="interna-topo-acoes">
-
-                                    <a class="interna-link" href="${pageContext.request.contextPath}/dashboard.jsp">
-                                        ← Dashboard
-                                    </a>
-
-                                    <a class="interna-link" href="${pageContext.request.contextPath}/logout">
-                                        Sair
-                                    </a>
-
-                                </div>
-
-                            </div>
-
-                        </header>
 
 
                         <main class="interna-principal">
 
                             <div class="container">
 
-                                <% if ("clienteVinculado".equals(request.getParameter("erro"))) { %>
 
-                                    <div class="aviso-interno" role="alert">
-                                        <strong>Não foi possível excluir o cliente.</strong>
+<% if (!mensagemSucesso.isEmpty()) { %>
+    <div class="aviso-sucesso-cliente" role="status">
+        <strong><%= mensagemSucesso %></strong>
+    </div>
+<% } %>
 
-                                        <p>
-                                            Este cliente possui veículos ou outros registros
-                                            vinculados ao cadastro. A exclusão foi bloqueada
-                                            para preservar o histórico do lava-rápido.
-                                        </p>
+<% if (!mensagemErro.isEmpty()) { %>
+    <div class="aviso-interno" role="alert">
+        <strong>Nao foi possivel concluir a operacao.</strong>
+        <p><%= mensagemErro %></p>
+    </div>
+<% } %>
 
-                                    </div>
-
-                                    <% } %>
-
-
-                                        <section class="interna-cabecalho">
+<section class="interna-cabecalho">
 
                                             <div>
 
@@ -120,7 +195,32 @@
                                         </section>
 
 
-                                        <section class="tabela-card">
+
+<section class="tabela-card">
+
+    <nav class="filtros-clientes" aria-label="Status dos clientes">
+
+        <a class="filtro-cliente <%= "ativos".equals(filtro) ? "filtro-selecionado" : "" %>"
+           href="${pageContext.request.contextPath}/cliente?filtro=ativos">
+            Ativos
+        </a>
+
+        <% if (administrador) { %>
+
+        <a class="filtro-cliente <%= "inativos".equals(filtro) ? "filtro-selecionado" : "" %>"
+           href="${pageContext.request.contextPath}/cliente?filtro=inativos">
+            Inativos
+        </a>
+
+        <a class="filtro-cliente <%= "excluidos".equals(filtro) ? "filtro-selecionado" : "" %>"
+           href="${pageContext.request.contextPath}/cliente?filtro=excluidos">
+            Excluídos
+        </a>
+
+        <% } %>
+
+    </nav>
+
 
                                             <div class="tabela-pesquisa">
 
@@ -234,33 +334,95 @@
 
                                                                     <td>
 
-                                                                        <div class="acoes-tabela">
 
-                                                                            <a class="acao-editar"
-                                                                                href="${pageContext.request.contextPath}/cliente?acao=editar&idCliente=<%= cliente.getIdCliente() %>">
-                                                                                Editar
-                                                                            </a>
+<div class="acoes-tabela">
 
+    <% if ("ativos".equals(filtro)) { %>
 
-                                                                            <form
-                                                                                action="${pageContext.request.contextPath}/cliente"
-                                                                                method="post">
+        <a class="acao-editar"
+           href="${pageContext.request.contextPath}/cliente?acao=editar&idCliente=<%= cliente.getIdCliente() %>">
+            Editar
+        </a>
 
-                                                                                <input type="hidden" name="acao"
-                                                                                    value="excluir">
+        <% if (administrador) { %>
 
-                                                                                <input type="hidden" name="idCliente"
-                                                                                    value="<%= cliente.getIdCliente() %>">
+        <form action="${pageContext.request.contextPath}/cliente"
+              method="post"
+              onsubmit="return confirm('Deseja inativar este cliente?');">
 
-                                                                                <button class="acao-excluir"
-                                                                                    type="submit"
-                                                                                    onclick="return confirm('Deseja realmente excluir este cliente?');">
-                                                                                    Excluir
-                                                                                </button>
+            <input type="hidden" name="acao" value="inativar">
+            <input type="hidden" name="filtro" value="ativos">
+            <input type="hidden" name="idCliente" value="<%= cliente.getIdCliente() %>">
 
-                                                                            </form>
+            <button type="submit"
+                    class="acao-status-cliente acao-inativar-cliente">
+                Inativar
+            </button>
 
-                                                                        </div>
+        </form>
+
+        <% } %>
+
+    <% } %>
+
+    <% if (administrador && "inativos".equals(filtro)) { %>
+
+        <form action="${pageContext.request.contextPath}/cliente"
+              method="post"
+              onsubmit="return confirm('Deseja reativar este cliente?');">
+
+            <input type="hidden" name="acao" value="reativar">
+            <input type="hidden" name="filtro" value="inativos">
+            <input type="hidden" name="idCliente" value="<%= cliente.getIdCliente() %>">
+
+            <button type="submit"
+                    class="acao-status-cliente acao-reativar-cliente">
+                Reativar
+            </button>
+
+        </form>
+
+    <% } %>
+
+    <% if (administrador && !"excluidos".equals(filtro)) { %>
+
+        <form action="${pageContext.request.contextPath}/cliente"
+              method="post"
+              onsubmit="return confirm('Deseja excluir este cliente? O historico sera preservado.');">
+
+            <input type="hidden" name="acao" value="excluir">
+            <input type="hidden" name="filtro" value="<%= filtro %>">
+            <input type="hidden" name="idCliente" value="<%= cliente.getIdCliente() %>">
+
+            <button class="acao-excluir" type="submit">
+                Excluir
+            </button>
+
+        </form>
+
+    <% } %>
+
+    <% if (administrador && "excluidos".equals(filtro)) { %>
+
+        <form action="${pageContext.request.contextPath}/cliente"
+              method="post"
+              onsubmit="return confirm('Deseja restaurar este cliente?');">
+
+            <input type="hidden" name="acao" value="restaurar">
+            <input type="hidden" name="filtro" value="excluidos">
+            <input type="hidden" name="idCliente" value="<%= cliente.getIdCliente() %>">
+
+            <button type="submit"
+                    class="acao-status-cliente acao-reativar-cliente">
+                Restaurar
+            </button>
+
+        </form>
+
+    <% } %>
+
+</div>
+
 
                                                                     </td>
 
@@ -280,7 +442,7 @@
 
                                                         <div class="estado-vazio">
 
-                                                            Nenhum cliente cadastrado.
+                                                            Nenhum cliente encontrado nesta categoria.
 
                                                         </div>
 
@@ -378,6 +540,7 @@
 
                         </script>
 
-                    </body>
+                    <script src="${pageContext.request.contextPath}/js/menu-lateral.js"></script>
+</body>
 
                     </html>

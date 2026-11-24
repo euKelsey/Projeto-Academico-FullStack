@@ -268,7 +268,7 @@ public class PagamentoApiServlet
                         response,
                         HttpServletResponse
                             .SC_NOT_FOUND,
-                        "Agendamento não encontrado ou cancelado."
+                        "Pagamento indisponível. Verifique se o agendamento está disponível e se o pagamento já foi realizado."
                 );
 
                 return;

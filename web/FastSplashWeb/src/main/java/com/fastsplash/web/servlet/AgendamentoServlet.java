@@ -19,6 +19,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/agendamento")
 public class AgendamentoServlet extends HttpServlet {
@@ -70,7 +71,9 @@ public class AgendamentoServlet extends HttpServlet {
 
             request.setAttribute(
                     "agendamentos",
-                    agendamentoDAO.listarTodos()
+                    agendamentoDAO.listarPorStatus(
+                            normalizarFiltro(
+                                request.getParameter("filtro")))
             );
 
             request.getRequestDispatcher(
@@ -110,6 +113,15 @@ public class AgendamentoServlet extends HttpServlet {
         // =====================================
         // CANCELAR
         // =====================================
+
+        if ("arquivar".equals(acao)
+                || "restaurar".equals(acao)) {
+
+            processarArquivamento(
+                    request, response, acao);
+
+            return;
+        }
 
         if ("cancelar".equals(acao)) {
 
@@ -349,4 +361,101 @@ public class AgendamentoServlet extends HttpServlet {
             );
         }
     }
+
+    private boolean usuarioAdministrador(
+            HttpServletRequest request
+    ) {
+
+        HttpSession sessao = request.getSession(false);
+
+        return sessao != null
+                && "ADMINISTRADOR".equals(
+                        sessao.getAttribute("nivelAcesso"));
+    }
+
+    private String normalizarFiltro(String filtro) {
+
+        if ("concluidos".equals(filtro)
+                || "cancelados".equals(filtro)
+                || "arquivados".equals(filtro)) {
+
+            return filtro;
+        }
+
+        return "agendados";
+    }
+
+    private void processarArquivamento(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String acao
+    ) throws ServletException, IOException {
+
+        if (!usuarioAdministrador(request)) {
+
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Apenas administradores podem arquivar ou restaurar agendamentos.");
+
+            return;
+        }
+
+        int idAgendamento;
+
+        try {
+
+            idAgendamento = Integer.parseInt(
+                    request.getParameter("idAgendamento"));
+
+            if (idAgendamento <= 0) {
+                throw new NumberFormatException();
+            }
+
+        } catch (NumberFormatException e) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "ID do agendamento inválido.");
+
+            return;
+        }
+
+        String filtro = normalizarFiltro(
+                request.getParameter("filtro"));
+
+        try {
+
+            boolean sucesso = "arquivar".equals(acao)
+                    ? agendamentoDAO.arquivarAgendamento(
+                            idAgendamento)
+                    : agendamentoDAO.restaurarAgendamento(
+                            idAgendamento);
+
+            String mensagem;
+
+            if (sucesso) {
+
+                mensagem = "status=" +
+                        ("arquivar".equals(acao)
+                            ? "arquivado"
+                            : "restaurado");
+
+            } else {
+
+                mensagem = "erro=operacaoInvalida";
+            }
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/agendamento?filtro=" + filtro
+                    + "&" + mensagem);
+
+        } catch (SQLException e) {
+
+            throw new ServletException(
+                    "Erro ao alterar arquivamento do agendamento.",
+                    e);
+        }
+    }
+
 }

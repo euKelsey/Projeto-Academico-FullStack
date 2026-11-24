@@ -3,7 +3,6 @@ package com.fastsplash.web.servlet;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Locale;
-import java.sql.SQLIntegrityConstraintViolationException;
 
 import com.fastsplash.web.dao.ClienteDAO;
 import com.fastsplash.web.dao.ResultadoStatusCliente;
@@ -65,6 +64,12 @@ public class ClienteServlet extends HttpServlet {
                                 Cliente cliente = clienteDAO.buscarPorId(
                                                 idCliente);
 
+                                if (cliente == null || cliente.isExcluido()) {
+                                        response.sendError(
+                                                HttpServletResponse.SC_NOT_FOUND);
+                                        return;
+                                }
+
                                 request.setAttribute(
                                                 "cliente",
                                                 cliente);
@@ -90,9 +95,24 @@ public class ClienteServlet extends HttpServlet {
 
                 try {
 
+                        String filtro = request.getParameter("filtro");
+
+                        if (!"inativos".equals(filtro)
+                                        && !"excluidos".equals(filtro)) {
+                                filtro = "ativos";
+                        }
+
+                        if (!"ativos".equals(filtro)
+                                        && !usuarioAdministrador(request)) {
+                                response.sendError(
+                                        HttpServletResponse.SC_FORBIDDEN);
+                                return;
+                        }
+
+                        request.setAttribute("filtro", filtro);
                         request.setAttribute(
-                                        "clientes",
-                                        clienteDAO.listarTodos());
+                                "clientes",
+                                clienteDAO.listarPorStatus(filtro));
 
                         request.getRequestDispatcher(
                                         "/lista-clientes.jsp").forward(
@@ -122,164 +142,14 @@ public class ClienteServlet extends HttpServlet {
                 // INATIVAR CLIENTE
                 // =========================================
 
-                if ("inativar".equals(acao)) {
+                if ("inativar".equals(acao)
+                                || "reativar".equals(acao)
+                                || "excluir".equals(acao)
+                                || "restaurar".equals(acao)) {
 
-                        int idCliente;
-
-                        try {
-                                idCliente = Integer.parseInt(
-                                                request.getParameter("idCliente"));
-
-                                if (idCliente <= 0) {
-                                        throw new NumberFormatException();
-                                }
-
-                        } catch (NumberFormatException e) {
-
-                                response.sendError(
-                                                HttpServletResponse.SC_BAD_REQUEST,
-                                                "ID do cliente inválido.");
-
-                                return;
-                        }
-
-                        // Conferir a permissão novamente no ponto da operação
-                        if (!usuarioAdministrador(request)) {
-
-                                response.sendError(
-                                                HttpServletResponse.SC_FORBIDDEN,
-                                                "Apenas administradores podem inativar clientes.");
-
-                                return;
-                        }
-
-                        try {
-
-                                ResultadoStatusCliente resultado = clienteDAO.inativarCliente(idCliente);
-
-                                switch (resultado) {
-
-                                        case SUCESSO:
-                                                response.sendRedirect(
-                                                                request.getContextPath()
-                                                                                + "/cliente?status=inativado");
-                                                break;
-
-                                        case POSSUI_PENDENCIAS:
-                                                response.sendRedirect(
-                                                                request.getContextPath()
-                                                                                + "/cliente?erro=pendencias");
-                                                break;
-
-                                        case JA_INATIVO:
-                                                response.sendRedirect(
-                                                                request.getContextPath()
-                                                                                + "/cliente?erro=jaInativo");
-                                                break;
-
-                                        case CLIENTE_NAO_ENCONTRADO:
-                                                response.sendError(
-                                                                HttpServletResponse.SC_NOT_FOUND,
-                                                                "Cliente não encontrado.");
-                                                break;
-
-                                        default:
-                                                response.sendError(
-                                                                HttpServletResponse.SC_CONFLICT,
-                                                                "Não foi possível inativar o cliente.");
-                                                break;
-                                }
-
-                        } catch (SQLException e) {
-
-                                throw new ServletException(
-                                                "Erro ao inativar cliente.",
-                                                e);
-                        }
-
+                        processarStatus(request, response, acao);
                         return;
                 }
-
-                // =========================================
-                // REATIVAR CLIENTE
-                // =========================================
-
-                if ("reativar".equals(acao)) {
-
-                        int idCliente;
-
-                        try {
-
-                                idCliente = Integer.parseInt(
-                                                request.getParameter("idCliente"));
-
-                                if (idCliente <= 0) {
-                                        throw new NumberFormatException();
-                                }
-
-                        } catch (NumberFormatException e) {
-
-                                response.sendError(
-                                                HttpServletResponse.SC_BAD_REQUEST,
-                                                "ID do cliente inválido.");
-
-                                return;
-                        }
-
-                        // Verificar permissão administrativa
-                        if (!usuarioAdministrador(request)) {
-
-                                response.sendError(
-                                                HttpServletResponse.SC_FORBIDDEN,
-                                                "Apenas administradores podem reativar clientes.");
-
-                                return;
-                        }
-
-                        try {
-
-                                ResultadoStatusCliente resultado = clienteDAO.reativarCliente(idCliente);
-
-                                switch (resultado) {
-
-                                        case SUCESSO:
-                                                response.sendRedirect(
-                                                                request.getContextPath()
-                                                                                + "/cliente?status=reativado");
-                                                break;
-
-                                        case JA_ATIVO:
-                                                response.sendRedirect(
-                                                                request.getContextPath()
-                                                                                + "/cliente?erro=jaAtivo");
-                                                break;
-
-                                        case CLIENTE_NAO_ENCONTRADO:
-                                                response.sendError(
-                                                                HttpServletResponse.SC_NOT_FOUND,
-                                                                "Cliente não encontrado.");
-                                                break;
-
-                                        default:
-                                                response.sendError(
-                                                                HttpServletResponse.SC_CONFLICT,
-                                                                "Não foi possível reativar o cliente.");
-                                                break;
-                                }
-
-                        } catch (SQLException e) {
-
-                                throw new ServletException(
-                                                "Erro ao reativar cliente.",
-                                                e);
-                        }
-
-                        return;
-                }
-
-                // =========================================
-                // ATUALIZAR
-                // =========================================
 
                 if ("atualizar".equals(acao)) {
 
@@ -307,6 +177,13 @@ public class ClienteServlet extends HttpServlet {
 
                                 Cliente cliente = clienteDAO.buscarPorId(
                                                 idCliente);
+
+                                if (cliente == null || cliente.isExcluido()) {
+                                        response.sendError(
+                                                HttpServletResponse.SC_CONFLICT,
+                                                "Cliente indisponivel para edicao.");
+                                        return;
+                                }
 
                                 if (cliente != null) {
 
@@ -337,37 +214,6 @@ public class ClienteServlet extends HttpServlet {
                 // =========================================
                 // EXCLUIR
                 // =========================================
-
-                if ("excluir".equals(acao)) {
-
-                        int idCliente = Integer.parseInt(
-                                        request.getParameter(
-                                                        "idCliente"));
-
-                        try {
-
-                                clienteDAO.excluir(
-                                                idCliente);
-
-                                response.sendRedirect(
-                                                request.getContextPath()
-                                                                + "/cliente");
-
-                        } catch (SQLIntegrityConstraintViolationException e) {
-
-                                response.sendRedirect(
-                                                request.getContextPath()
-                                                                + "/cliente?erro=clienteVinculado");
-
-                        } catch (SQLException e) {
-
-                                throw new ServletException(
-                                                "Erro ao excluir cliente.",
-                                                e);
-                        }
-
-                        return;
-                }
 
                 // =========================================
                 // CADASTRAR
@@ -447,6 +293,87 @@ public class ClienteServlet extends HttpServlet {
                         throw new ServletException(
                                         "Erro ao cadastrar cliente.",
                                         e);
+                }
+        }
+
+
+        private void processarStatus(
+                HttpServletRequest request,
+                HttpServletResponse response,
+                String acao
+        ) throws ServletException, IOException {
+
+                if (!usuarioAdministrador(request)) {
+                        response.sendError(
+                                HttpServletResponse.SC_FORBIDDEN,
+                                "Apenas administradores podem alterar o status dos clientes.");
+                        return;
+                }
+
+                int idCliente;
+
+                try {
+                        idCliente = Integer.parseInt(
+                                request.getParameter("idCliente"));
+
+                        if (idCliente <= 0) {
+                                throw new NumberFormatException();
+                        }
+
+                } catch (NumberFormatException e) {
+                        response.sendError(
+                                HttpServletResponse.SC_BAD_REQUEST,
+                                "ID do cliente invalido.");
+                        return;
+                }
+
+                String filtro = request.getParameter("filtro");
+
+                if (!"inativos".equals(filtro)
+                                && !"excluidos".equals(filtro)) {
+                        filtro = "ativos";
+                }
+
+                try {
+
+                        ResultadoStatusCliente resultado = switch (acao) {
+                                case "inativar" ->
+                                        clienteDAO.inativarCliente(idCliente);
+                                case "reativar" ->
+                                        clienteDAO.reativarCliente(idCliente);
+                                case "excluir" ->
+                                        clienteDAO.excluirLogicamente(idCliente);
+                                case "restaurar" ->
+                                        clienteDAO.restaurarCliente(idCliente);
+                                default ->
+                                        throw new IllegalArgumentException("Acao invalida.");
+                        };
+
+                        String mensagem = switch (resultado) {
+                                case SUCESSO -> "status=" + switch (acao) {
+                                        case "inativar" -> "inativado";
+                                        case "reativar" -> "reativado";
+                                        case "excluir" -> "excluido";
+                                        case "restaurar" -> "restaurado";
+                                        default -> "sucesso";
+                                };
+
+                                case POSSUI_PENDENCIAS -> "erro=pendencias";
+                                case JA_ATIVO -> "erro=jaAtivo";
+                                case JA_INATIVO -> "erro=jaInativo";
+                                case JA_EXCLUIDO -> "erro=jaExcluido";
+                                case NAO_EXCLUIDO -> "erro=naoExcluido";
+                                case CLIENTE_NAO_ENCONTRADO -> "erro=naoEncontrado";
+                        };
+
+                        response.sendRedirect(
+                                request.getContextPath()
+                                + "/cliente?filtro=" + filtro
+                                + "&" + mensagem);
+
+                } catch (SQLException e) {
+                        throw new ServletException(
+                                "Erro ao alterar status do cliente.", e);
                 }
         }
 

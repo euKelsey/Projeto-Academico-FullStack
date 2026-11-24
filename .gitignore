@@ -74,3 +74,19 @@ web/FastSplashWeb/build/
 .classpath
 # Android build
 /android/build/
+
+# Credenciais e arquivos sensiveis
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+key.properties
+
+# Backups do banco
+/backups/
+/database/backups/
+*.sql.tmp
