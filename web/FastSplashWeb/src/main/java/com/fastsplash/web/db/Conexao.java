@@ -9,7 +9,7 @@ public class Conexao {
 
         private static final String URL = obterVariavel(
                         "FASTSPLASH_DB_URL",
-                        "jdbc:mysql://localhost:3306/lava_rapido");
+                        "jdbc:mysql://localhost:3306/fast_splash");
 
         private static final String USUARIO = obterVariavel(
                         "FASTSPLASH_DB_USER",

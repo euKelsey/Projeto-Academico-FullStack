@@ -2,59 +2,98 @@ name: CI Fast Splash
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
 
   flutter:
-
-    name: Validar Flutter
-
+    name: Validar Flutter e Android
     runs-on: ubuntu-latest
-
+    timeout-minutes: 30
 
     steps:
+      - name: Baixar repositorio
+        uses: actions/checkout@v7
 
-      - name: Baixar código do repositório
-        uses: actions/checkout@v4
-
+      - name: Configurar Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
 
       - name: Configurar Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.50.1'
           channel: stable
+          cache: true
 
+      - name: Verificar ambiente
+        run: |
+          java -version
+          flutter --version
+          dart --version
 
-      - name: Instalar dependências
+      - name: Instalar dependencias
         run: flutter pub get
 
-
-      - name: Analisar código Flutter
+      - name: Analisar codigo
         run: flutter analyze
 
-
-      - name: Executar testes Flutter
+      - name: Executar testes
         run: flutter test
 
+      - name: Compilar APK Android
+        run: flutter build apk --debug
 
   web-java:
-
-    name: Validar Web Java
-
+    name: Validar Web Java e Docker
     runs-on: ubuntu-latest
-
+    timeout-minutes: 20
 
     steps:
+      - name: Baixar repositorio
+        uses: actions/checkout@v7
 
-      - name: Baixar código do repositório
-        uses: actions/checkout@v4
+      - name: Construir imagem Docker
+        run: |
+          docker build -t fast-splash-web:ci ./web/FastSplashWeb
 
+      - name: Verificar Java e Tomcat
+        run: |
+          docker run --rm fast-splash-web:ci java -version
+          docker run --rm fast-splash-web:ci catalina.sh version
 
-      - name: Construir aplicação Web
-        run: docker build -t fast-splash-web ./web/FastSplashWeb
+      - name: Iniciar backend
+        run: |
+          docker run -d \
+            --name fast-splash-ci \
+            -p 127.0.0.1:10000:10000 \
+            fast-splash-web:ci
+
+      - name: Testar resposta HTTP
+        run: |
+          curl --fail --retry 15 --retry-all-errors \
+            --retry-delay 2 --max-time 10 \
+            http://localhost:10000/
+
+      - name: Exibir logs em caso de falha
+        if: failure()
+        run: docker logs fast-splash-ci || true
+
+      - name: Limpar ambiente
+        if: always()
+        run: docker rm -f fast-splash-ci || true

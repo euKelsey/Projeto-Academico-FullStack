@@ -1,28 +1,31 @@
-FROM tomcat:10.1-jdk21-temurin
+FROM tomcat:11.0.29-jdk25-temurin
 
-# Limpa as aplicações padrão do Tomcat
+# Remove as aplicacoes padrao do Tomcat
 RUN rm -rf /usr/local/tomcat/webapps/*
 
-# Cria a estrutura da aplicação
-RUN mkdir -p /usr/local/tomcat/webapps/ROOT/WEB-INF/classes
-
-# Copia JSP, CSS, imagens e bibliotecas
+# Copia os arquivos da aplicacao
 COPY src/main/webapp/ /usr/local/tomcat/webapps/ROOT/
 
-# Copia temporariamente os arquivos Java
+# Remove classes compiladas localmente
+RUN rm -rf /usr/local/tomcat/webapps/ROOT/WEB-INF/classes \
+    && mkdir -p /usr/local/tomcat/webapps/ROOT/WEB-INF/classes
+
+# Copia o codigo-fonte Java
 COPY src/main/java/ /tmp/src/
 
-# Compila os arquivos Java
+# Compila o backend
 RUN find /tmp/src -name "*.java" > /tmp/sources.txt \
     && javac \
        -encoding UTF-8 \
+       --release 25 \
        -cp "/usr/local/tomcat/lib/*:/usr/local/tomcat/webapps/ROOT/WEB-INF/lib/*" \
        -d /usr/local/tomcat/webapps/ROOT/WEB-INF/classes \
        @/tmp/sources.txt \
     && rm -rf /tmp/src /tmp/sources.txt
 
-# Porta usada pelo Render
+# Porta utilizada pelo Render
+ENV PORT=10000
 EXPOSE 10000
 
-# Ajusta a porta do Tomcat para a porta fornecida pelo Render
-CMD ["sh", "-c", "sed -i \"s/port=\\\"8005\\\" shutdown=\\\"SHUTDOWN\\\"/port=\\\"-1\\\" shutdown=\\\"SHUTDOWN\\\"/\" /usr/local/tomcat/conf/server.xml && sed -i \"s/port=\\\"8080\\\"/port=\\\"${PORT:-10000}\\\"/\" /usr/local/tomcat/conf/server.xml && catalina.sh run"]
+# Inicializa o servidor
+CMD ["sh", "-c", "sed -i \"s/port=\\\"8005\\\" shutdown=\\\"SHUTDOWN\\\"/port=\\\"-1\\\" shutdown=\\\"SHUTDOWN\\\"/\" /usr/local/tomcat/conf/server.xml && sed -i \"s/port=\\\"8080\\\"/port=\\\"${PORT}\\\"/\" /usr/local/tomcat/conf/server.xml && exec catalina.sh run"]

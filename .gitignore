@@ -72,3 +72,5 @@ web/FastSplashWeb/build/
 
 # Arquivos de configuração local do Eclipse
 .classpath
+# Android build
+/android/build/
