@@ -25,3 +25,29 @@ services:
       timeout: 5s
       retries: 20
       start_period: 60s
+
+  web-test:
+    image: fast-splash-web:test
+    container_name: fast-splash-web-test
+
+    profiles:
+      - api
+
+    build:
+      context: ./web/FastSplashWeb
+      dockerfile: Dockerfile
+
+    environment:
+      PORT: "10000"
+      FASTSPLASH_DB_URL: "jdbc:mysql://mysql-test:3306/fast_splash_test"
+      FASTSPLASH_DB_USER: "fastsplash_test"
+      FASTSPLASH_DB_PASSWORD: "FastSplashLocalTest@2026"
+
+    ports:
+      - "127.0.0.1:8081:10000"
+
+    depends_on:
+      mysql-test:
+        condition: service_healthy
+
+    restart: "no"

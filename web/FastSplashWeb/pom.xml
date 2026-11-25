@@ -24,6 +24,7 @@
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
         <mysql.connector.version>26.10.0</mysql.connector.version>
         <junit.version>5.13.4</junit.version>
+        <rest-assured.version>6.3.0</rest-assured.version>
     </properties>
 
     <dependencies>
@@ -49,6 +50,14 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testes HTTP da API -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -98,6 +107,9 @@
 
                         <configuration>
                             <failIfNoTests>true</failIfNoTests>
+                            <excludes>
+                                <exclude>**/*ApiIT.java</exclude>
+                            </excludes>
                         </configuration>
 
                         <executions>
@@ -114,6 +126,46 @@
             </build>
 
         </profile>
+        <!-- Testes HTTP com servidor isolado -->
+        <profile>
+            <id>api-tests</id>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>3.6.0</version>
+
+                        <configuration>
+                            <failIfNoTests>true</failIfNoTests>
+
+                            <includes>
+                                <include>**/*ApiIT.java</include>
+                            </includes>
+
+                            <reportsDirectory>
+                                ${project.build.directory}/failsafe-api-reports
+                            </reportsDirectory>
+
+                            <summaryFile>
+                                ${project.build.directory}/failsafe-api-reports/failsafe-summary.xml
+                            </summaryFile>
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
 </project>
