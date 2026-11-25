@@ -1,0 +1,71 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Fast Splash - Compilar Web",
+            "type": "process",
+            "command": "bash",
+            "args": [
+                "./mvnw",
+                "clean",
+                "package"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/web/FastSplashWeb"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": [],
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/d",
+                    "/c",
+                    "mvnw.cmd",
+                    "clean",
+                    "package"
+                ]
+            }
+        },
+        {
+            "label": "Fast Splash - Testar Backend",
+            "type": "process",
+            "command": "bash",
+            "args": [
+                "./mvnw",
+                "verify"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/web/FastSplashWeb"
+            },
+            "group": "test",
+            "problemMatcher": [],
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/d",
+                    "/c",
+                    "mvnw.cmd",
+                    "verify"
+                ]
+            }
+        },
+        {
+            "label": "Fast Splash - Testar Flutter",
+            "type": "shell",
+            "command": "flutter test",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "test",
+            "problemMatcher": []
+        }
+    ]
+}

@@ -2,3 +2,16 @@ src/main/webapp/WEB-INF/classes/
 **/.env
 **/.env.*
 **/*.log
+
+# Maven e arquivos locais
+target/
+**/target/
+.git/
+.settings/
+.classpath
+.project
+.vscode/
+.idea/
+**/*.log
+**/.env
+**/.env.*

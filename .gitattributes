@@ -1,0 +1,13 @@
+
+# Padronizacao de quebras de linha
+* text=auto
+*.sh text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.yml text eol=lf
+*.yaml text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+mvnw text eol=lf
+*.jar binary
+*.war binary
