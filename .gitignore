@@ -100,3 +100,6 @@ key.properties
 !/.vscode/
 /.vscode/*
 !/.vscode/tasks.json
+
+# Arquivos gerados para testes automatizados
+/tests/database/*.generated.sql
