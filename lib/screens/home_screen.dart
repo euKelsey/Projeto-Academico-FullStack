@@ -1064,7 +1064,7 @@ class _HomeScreenState
 
                           mainAxisSpacing: 12,
 
-                          childAspectRatio: 1.02,
+                          mainAxisExtent: 200,
 
                           children: [
 
