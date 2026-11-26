@@ -103,3 +103,6 @@ key.properties
 
 # Arquivos gerados para testes automatizados
 /tests/database/*.generated.sql
+
+# Relatorios do executor central de testes
+/test-reports/
