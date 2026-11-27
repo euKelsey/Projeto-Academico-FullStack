@@ -106,3 +106,7 @@ key.properties
 
 # Relatorios do executor central de testes
 /test-reports/
+
+# Residuos de compilacao Java anteriores ao Maven
+/web/FastSplashWeb/src/main/webapp/WEB-INF/classes/
+/web/FastSplashWeb/src/main/webapp/WEB-INF/lib/*.jar

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fastsplash.web.db.Conexao;
+import com.fastsplash.web.db.Transacao;
 import com.fastsplash.web.model.Colaborador;
 
 public class ColaboradorDAO {
@@ -219,51 +220,41 @@ public class ColaboradorDAO {
             boolean alterarSenha
     ) throws SQLException {
 
-        try (Connection conexao = Conexao.conectar()) {
+        Transacao.executar((conexao, controle) -> {
+            List<Colaborador> registros =
+                    bloquearColaboradores(conexao);
 
-            conexao.setAutoCommit(false);
+            Colaborador atual = registros.stream()
+                    .filter(c -> c.getIdColaborador()
+                            == colaborador.getIdColaborador())
+                    .findFirst()
+                    .orElse(null);
 
-            try {
+            if (atual == null
+                    || !atual.isAtivo()
+                    || atual.isExcluido()) {
 
-                List<Colaborador> registros =
-                        bloquearColaboradores(conexao);
-
-                Colaborador atual = registros.stream()
-                        .filter(c -> c.getIdColaborador()
-                                == colaborador.getIdColaborador())
-                        .findFirst()
-                        .orElse(null);
-
-                if (atual == null
-                        || !atual.isAtivo()
-                        || atual.isExcluido()) {
-
-                    throw new SQLException(
-                            "Colaborador indisponivel para edicao.");
-                }
-
-                if ("ADMINISTRADOR".equals(atual.getNivelAcesso())
-                        && !"ADMINISTRADOR".equals(
-                                colaborador.getNivelAcesso())
-                        && contarAdministradores(registros) <= 1) {
-
-                    throw new SQLException(
-                            "Nao e permitido alterar o nivel do ultimo administrador.");
-                }
-
-                if (alterarSenha) {
-                    atualizarComSenha(conexao, colaborador);
-                } else {
-                    atualizarSemSenha(conexao, colaborador);
-                }
-
-                conexao.commit();
-
-            } catch (SQLException e) {
-                conexao.rollback();
-                throw e;
+                throw new SQLException(
+                        "Colaborador indisponivel para edicao.");
             }
-        }
+
+            if ("ADMINISTRADOR".equals(atual.getNivelAcesso())
+                    && !"ADMINISTRADOR".equals(
+                            colaborador.getNivelAcesso())
+                    && contarAdministradores(registros) <= 1) {
+
+                throw new SQLException(
+                        "Nao e permitido alterar o nivel do ultimo administrador.");
+            }
+
+            if (alterarSenha) {
+                atualizarComSenha(conexao, colaborador);
+            } else {
+                atualizarSemSenha(conexao, colaborador);
+            }
+
+            return null;
+        });
     }
 
     private void atualizarSemSenha(
@@ -529,146 +520,134 @@ public class ColaboradorDAO {
             String acao
     ) throws SQLException {
 
-        try (Connection conexao = Conexao.conectar()) {
+        return Transacao.executar((conexao, controle) -> {
+            List<Colaborador> registros =
+                    bloquearColaboradores(conexao);
 
-            conexao.setAutoCommit(false);
+            Colaborador atual = registros.stream()
+                    .filter(c -> c.getIdColaborador()
+                            == idColaborador)
+                    .findFirst()
+                    .orElse(null);
 
-            try {
-
-                List<Colaborador> registros =
-                        bloquearColaboradores(conexao);
-
-                Colaborador atual = registros.stream()
-                        .filter(c -> c.getIdColaborador()
-                                == idColaborador)
-                        .findFirst()
-                        .orElse(null);
-
-                if (atual == null) {
-                    conexao.rollback();
-                    return ResultadoStatusColaborador
-                            .COLABORADOR_NAO_ENCONTRADO;
-                }
-
-                boolean desativar =
-                        "inativar".equals(acao)
-                        || "excluir".equals(acao);
-
-                if (desativar
-                        && idColaborador == idUsuarioLogado) {
-
-                    conexao.rollback();
-
-                    return ResultadoStatusColaborador
-                            .PROPRIO_USUARIO;
-                }
-
-                if (atual.isExcluido()
-                        && !"restaurar".equals(acao)) {
-
-                    conexao.rollback();
-
-                    return ResultadoStatusColaborador
-                            .JA_EXCLUIDO;
-                }
-
-                if ("restaurar".equals(acao)
-                        && !atual.isExcluido()) {
-
-                    conexao.rollback();
-
-                    return ResultadoStatusColaborador
-                            .NAO_EXCLUIDO;
-                }
-
-                if ("inativar".equals(acao)
-                        && !atual.isAtivo()) {
-
-                    conexao.rollback();
-
-                    return ResultadoStatusColaborador
-                            .JA_INATIVO;
-                }
-
-                if ("reativar".equals(acao)
-                        && atual.isAtivo()) {
-
-                    conexao.rollback();
-
-                    return ResultadoStatusColaborador
-                            .JA_ATIVO;
-                }
-
-                if (desativar) {
-
-                    if (atual.isAtivo()
-                            && "ADMINISTRADOR".equals(
-                                    atual.getNivelAcesso())
-                            && contarAdministradores(registros) <= 1) {
-
-                        conexao.rollback();
-
-                        return ResultadoStatusColaborador
-                                .ULTIMO_ADMINISTRADOR;
-                    }
-
-                    if (possuiPendencias(
-                            conexao, idColaborador)) {
-
-                        conexao.rollback();
-
-                        return ResultadoStatusColaborador
-                                .POSSUI_PENDENCIAS;
-                    }
-                }
-
-                String sql = switch (acao) {
-
-                    case "inativar" -> """
-                            UPDATE colaborador
-                            SET ativo = FALSE
-                            WHERE id_colaborador = ?
-                            """;
-
-                    case "excluir" -> """
-                            UPDATE colaborador
-                            SET ativo = FALSE,
-                                excluido_em = CURRENT_TIMESTAMP
-                            WHERE id_colaborador = ?
-                            """;
-
-                    case "reativar", "restaurar" -> """
-                            UPDATE colaborador
-                            SET ativo = TRUE,
-                                excluido_em = NULL
-                            WHERE id_colaborador = ?
-                            """;
-
-                    default ->
-                        throw new SQLException("Acao invalida.");
-                };
-
-                try (PreparedStatement comando =
-                        conexao.prepareStatement(sql)) {
-
-                    comando.setInt(1, idColaborador);
-
-                    if (comando.executeUpdate() != 1) {
-                        throw new SQLException(
-                                "Nao foi possivel alterar o status.");
-                    }
-                }
-
-                conexao.commit();
-
-                return ResultadoStatusColaborador.SUCESSO;
-
-            } catch (SQLException e) {
-
-                conexao.rollback();
-                throw e;
+            if (atual == null) {
+                controle.cancelar();
+                return ResultadoStatusColaborador
+                        .COLABORADOR_NAO_ENCONTRADO;
             }
-        }
+
+            boolean desativar =
+                    "inativar".equals(acao)
+                    || "excluir".equals(acao);
+
+            if (desativar
+                    && idColaborador == idUsuarioLogado) {
+
+                controle.cancelar();
+
+                return ResultadoStatusColaborador
+                        .PROPRIO_USUARIO;
+            }
+
+            if (atual.isExcluido()
+                    && !"restaurar".equals(acao)) {
+
+                controle.cancelar();
+
+                return ResultadoStatusColaborador
+                        .JA_EXCLUIDO;
+            }
+
+            if ("restaurar".equals(acao)
+                    && !atual.isExcluido()) {
+
+                controle.cancelar();
+
+                return ResultadoStatusColaborador
+                        .NAO_EXCLUIDO;
+            }
+
+            if ("inativar".equals(acao)
+                    && !atual.isAtivo()) {
+
+                controle.cancelar();
+
+                return ResultadoStatusColaborador
+                        .JA_INATIVO;
+            }
+
+            if ("reativar".equals(acao)
+                    && atual.isAtivo()) {
+
+                controle.cancelar();
+
+                return ResultadoStatusColaborador
+                        .JA_ATIVO;
+            }
+
+            if (desativar) {
+
+                if (atual.isAtivo()
+                        && "ADMINISTRADOR".equals(
+                                atual.getNivelAcesso())
+                        && contarAdministradores(registros) <= 1) {
+
+                    controle.cancelar();
+
+                    return ResultadoStatusColaborador
+                            .ULTIMO_ADMINISTRADOR;
+                }
+
+                if (possuiPendencias(
+                        conexao, idColaborador)) {
+
+                    controle.cancelar();
+
+                    return ResultadoStatusColaborador
+                            .POSSUI_PENDENCIAS;
+                }
+            }
+
+            String sql = switch (acao) {
+
+                case "inativar" -> """
+                        UPDATE colaborador
+                        SET ativo = FALSE
+                        WHERE id_colaborador = ?
+                        """;
+
+                case "excluir" -> """
+                        UPDATE colaborador
+                        SET ativo = FALSE,
+                            excluido_em = CURRENT_TIMESTAMP
+                        WHERE id_colaborador = ?
+                        """;
+
+                case "reativar", "restaurar" -> """
+                        UPDATE colaborador
+                        SET ativo = TRUE,
+                            excluido_em = NULL
+                        WHERE id_colaborador = ?
+                        """;
+
+                default ->
+                    throw new SQLException("Acao invalida.");
+            };
+
+            try (PreparedStatement comando =
+                    conexao.prepareStatement(sql)) {
+
+                comando.setInt(1, idColaborador);
+
+                if (comando.executeUpdate() != 1) {
+                    throw new SQLException(
+                            "Nao foi possivel alterar o status.");
+                }
+            }
+
+
+            return ResultadoStatusColaborador.SUCESSO;
+        });
     }
 
     public ResultadoStatusColaborador inativarColaborador(

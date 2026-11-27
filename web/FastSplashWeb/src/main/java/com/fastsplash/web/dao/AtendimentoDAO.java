@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fastsplash.web.db.Conexao;
+import com.fastsplash.web.db.Transacao;
 import com.fastsplash.web.model.Agendamento;
 import com.fastsplash.web.model.Atendimento;
 
@@ -540,15 +541,7 @@ public class AtendimentoDAO {
                 """;
 
 
-        Connection conexao =
-                Conexao.conectar();
-
-
-        try {
-
-            conexao.setAutoCommit(false);
-
-
+        Transacao.executar((conexao, controle) -> {
             // =================================
             // FINALIZA O ATENDIMENTO
             // =================================
@@ -610,31 +603,8 @@ public class AtendimentoDAO {
                 }
             }
 
-
-            conexao.commit();
-
-
-        } catch (SQLException e) {
-
-            conexao.rollback();
-
-            throw e;
-
-
-        } finally {
-
-            try {
-
-                conexao.setAutoCommit(true);
-
-            } catch (SQLException e) {
-
-                // A conexão será fechada logo abaixo.
-            }
-
-
-            conexao.close();
-        }
+            return null;
+        });
     }
 
 

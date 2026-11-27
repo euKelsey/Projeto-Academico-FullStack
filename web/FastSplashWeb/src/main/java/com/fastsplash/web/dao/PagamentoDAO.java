@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.fastsplash.web.db.Conexao;
+import com.fastsplash.web.db.Transacao;
 import com.fastsplash.web.model.Pagamento;
 
 public class PagamentoDAO {
@@ -393,143 +394,117 @@ public class PagamentoDAO {
                                     status_pagamento = 'PAGO'
                                 """;
 
-                Connection conexao = Conexao.conectar();
+                return Transacao.executar((conexao, controle) -> {
+                    String bloquearAgendamento = """
+                            SELECT id_agendamento
+                            FROM agendamento
+                            WHERE id_agendamento = ?
+                              AND arquivado_em IS NULL
+                              AND status <> 'CANCELADO'
+                            FOR UPDATE
+                            """;
 
-                try {
+                    try (PreparedStatement bloqueio =
+                            conexao.prepareStatement(
+                                bloquearAgendamento)) {
 
-                        conexao.setAutoCommit(false);
+                        bloqueio.setInt(1, idAgendamento);
 
-                        String bloquearAgendamento = """
-                                SELECT id_agendamento
-                                FROM agendamento
-                                WHERE id_agendamento = ?
-                                  AND arquivado_em IS NULL
-                                  AND status <> 'CANCELADO'
-                                FOR UPDATE
-                                """;
+                        try (ResultSet resultado =
+                                bloqueio.executeQuery()) {
 
-                        try (PreparedStatement bloqueio =
-                                conexao.prepareStatement(
-                                    bloquearAgendamento)) {
+                            if (!resultado.next()) {
+                                controle.cancelar();
+                                return false;
+                            }
+                        }
+                    }
 
-                            bloqueio.setInt(1, idAgendamento);
 
-                            try (ResultSet resultado =
-                                    bloqueio.executeQuery()) {
 
-                                if (!resultado.next()) {
-                                    conexao.rollback();
+                    String verificarPagamento = """
+                            SELECT status_pagamento,
+                                   arquivado_em
+                            FROM pagamento
+                            WHERE id_agendamento = ?
+                            FOR UPDATE
+                            """;
+
+                    try (PreparedStatement verificacao =
+                            conexao.prepareStatement(
+                                verificarPagamento)) {
+
+                        verificacao.setInt(1, idAgendamento);
+
+                        try (ResultSet resultado =
+                                verificacao.executeQuery()) {
+
+                            if (resultado.next()) {
+
+                                if (resultado.getTimestamp(
+                                        "arquivado_em") != null
+                                        || !"PENDENTE".equals(
+                                            resultado.getString(
+                                                "status_pagamento"))) {
+
+                                    controle.cancelar();
                                     return false;
                                 }
                             }
                         }
+                    }
 
+                    double valorTotal;
 
+                    try (
+                                    PreparedStatement comando = conexao.prepareStatement(
+                                                    buscarValor)) {
 
-                        String verificarPagamento = """
-                                SELECT status_pagamento,
-                                       arquivado_em
-                                FROM pagamento
-                                WHERE id_agendamento = ?
-                                FOR UPDATE
-                                """;
+                            comando.setInt(
+                                            1,
+                                            idAgendamento);
 
-                        try (PreparedStatement verificacao =
-                                conexao.prepareStatement(
-                                    verificarPagamento)) {
+                            comando.setInt(
+                                            2,
+                                            idCliente);
 
-                            verificacao.setInt(1, idAgendamento);
+                            try (
+                                            ResultSet resultado = comando.executeQuery()) {
 
-                            try (ResultSet resultado =
-                                    verificacao.executeQuery()) {
+                                    if (!resultado.next()) {
 
-                                if (resultado.next()) {
+                                            controle.cancelar();
 
-                                    if (resultado.getTimestamp(
-                                            "arquivado_em") != null
-                                            || !"PENDENTE".equals(
-                                                resultado.getString(
-                                                    "status_pagamento"))) {
-
-                                        conexao.rollback();
-                                        return false;
+                                            return false;
                                     }
-                                }
+
+                                    valorTotal = resultado.getDouble(
+                                                    "valor_total");
                             }
-                        }
+                    }
 
-                        double valorTotal;
+                    try (
+                                    PreparedStatement comando = conexao.prepareStatement(
+                                                    inserirPagamento)) {
 
-                        try (
-                                        PreparedStatement comando = conexao.prepareStatement(
-                                                        buscarValor)) {
+                            comando.setInt(
+                                            1,
+                                            idAgendamento);
 
-                                comando.setInt(
-                                                1,
-                                                idAgendamento);
+                            comando.setDouble(
+                                            2,
+                                            valorTotal);
 
-                                comando.setInt(
-                                                2,
-                                                idCliente);
+                            comando.setString(
+                                            3,
+                                            formaPagamento);
 
-                                try (
-                                                ResultSet resultado = comando.executeQuery()) {
+                            comando.executeUpdate();
+                    }
 
-                                        if (!resultado.next()) {
 
-                                                conexao.rollback();
-
-                                                return false;
-                                        }
-
-                                        valorTotal = resultado.getDouble(
-                                                        "valor_total");
-                                }
-                        }
-
-                        try (
-                                        PreparedStatement comando = conexao.prepareStatement(
-                                                        inserirPagamento)) {
-
-                                comando.setInt(
-                                                1,
-                                                idAgendamento);
-
-                                comando.setDouble(
-                                                2,
-                                                valorTotal);
-
-                                comando.setString(
-                                                3,
-                                                formaPagamento);
-
-                                comando.executeUpdate();
-                        }
-
-                        conexao.commit();
-
-                        return true;
-
-                } catch (SQLException e) {
-
-                        conexao.rollback();
-
-                        throw e;
-
-                } finally {
-
-                        try {
-
-                                conexao.setAutoCommit(
-                                                true);
-
-                        } catch (SQLException e) {
-
-                                // A conexão será fechada.
-                        }
-
-                        conexao.close();
-                }
+                    return true;
+                });
         }
 
         // =========================================

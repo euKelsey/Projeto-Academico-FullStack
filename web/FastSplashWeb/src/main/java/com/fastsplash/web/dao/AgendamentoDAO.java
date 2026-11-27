@@ -16,6 +16,7 @@ import com.fastsplash.web.model.AgendamentoCliente;
 import com.fastsplash.web.model.Servico;
 
 import com.fastsplash.web.db.Conexao;
+import com.fastsplash.web.db.Transacao;
 import com.fastsplash.web.model.Agendamento;
 
 public class AgendamentoDAO {
@@ -68,13 +69,7 @@ public class AgendamentoDAO {
                 """;
 
 
-        Connection conexao =
-                Conexao.conectar();
-
-        try {
-
-            conexao.setAutoCommit(false);
-
+        Transacao.executar((conexao, controle) -> {
             validarVeiculoDisponivel(
                     conexao,
                     agendamento.getIdVeiculo()
@@ -210,21 +205,8 @@ public class AgendamentoDAO {
                 }
             }
 
-
-            conexao.commit();
-
-
-        } catch (SQLException e) {
-
-            conexao.rollback();
-
-            throw e;
-
-
-        } finally {
-
-            conexao.close();
-        }
+            return null;
+        });
     }
 
 

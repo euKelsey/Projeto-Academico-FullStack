@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fastsplash.web.db.Conexao;
+import com.fastsplash.web.db.Transacao;
 import com.fastsplash.web.model.Veiculo;
 
 public class VeiculoDAO {
@@ -315,150 +316,138 @@ public class VeiculoDAO {
             String acao
     ) throws SQLException {
 
-        try (Connection conexao = Conexao.conectar()) {
+        return Transacao.executar((conexao, controle) -> {
+            Veiculo veiculo;
 
-            conexao.setAutoCommit(false);
+            String consulta = """
+                    SELECT *
+                    FROM veiculo
+                    WHERE id_veiculo = ?
+                    FOR UPDATE
+                    """;
 
-            try {
+            try (PreparedStatement comando =
+                    conexao.prepareStatement(consulta)) {
 
-                Veiculo veiculo;
+                comando.setInt(1, idVeiculo);
 
-                String consulta = """
-                        SELECT *
-                        FROM veiculo
-                        WHERE id_veiculo = ?
+                try (ResultSet resultado =
+                        comando.executeQuery()) {
+
+                    if (!resultado.next()) {
+                        controle.cancelar();
+                        return ResultadoStatusVeiculo
+                                .VEICULO_NAO_ENCONTRADO;
+                    }
+
+                    veiculo = criarVeiculo(resultado);
+                }
+            }
+
+            if (veiculo.isExcluido()
+                    && !"restaurar".equals(acao)) {
+                controle.cancelar();
+                return ResultadoStatusVeiculo.JA_EXCLUIDO;
+            }
+
+            if ("restaurar".equals(acao)
+                    && !veiculo.isExcluido()) {
+                controle.cancelar();
+                return ResultadoStatusVeiculo.NAO_EXCLUIDO;
+            }
+
+            if ("inativar".equals(acao)
+                    && !veiculo.isAtivo()) {
+                controle.cancelar();
+                return ResultadoStatusVeiculo.JA_INATIVO;
+            }
+
+            if ("reativar".equals(acao)
+                    && veiculo.isAtivo()) {
+                controle.cancelar();
+                return ResultadoStatusVeiculo.JA_ATIVO;
+            }
+
+            boolean ativar =
+                    "reativar".equals(acao)
+                    || "restaurar".equals(acao);
+
+            if (ativar) {
+
+                String sqlCliente = """
+                        SELECT ativo, excluido_em
+                        FROM cliente
+                        WHERE id_cliente = ?
                         FOR UPDATE
                         """;
 
                 try (PreparedStatement comando =
-                        conexao.prepareStatement(consulta)) {
+                        conexao.prepareStatement(sqlCliente)) {
 
-                    comando.setInt(1, idVeiculo);
+                    comando.setInt(
+                            1, veiculo.getIdCliente());
 
                     try (ResultSet resultado =
                             comando.executeQuery()) {
 
-                        if (!resultado.next()) {
-                            conexao.rollback();
+                        if (!resultado.next()
+                                || !resultado.getBoolean("ativo")
+                                || resultado.getTimestamp(
+                                        "excluido_em") != null) {
+
+                            controle.cancelar();
+
                             return ResultadoStatusVeiculo
-                                    .VEICULO_NAO_ENCONTRADO;
-                        }
-
-                        veiculo = criarVeiculo(resultado);
-                    }
-                }
-
-                if (veiculo.isExcluido()
-                        && !"restaurar".equals(acao)) {
-                    conexao.rollback();
-                    return ResultadoStatusVeiculo.JA_EXCLUIDO;
-                }
-
-                if ("restaurar".equals(acao)
-                        && !veiculo.isExcluido()) {
-                    conexao.rollback();
-                    return ResultadoStatusVeiculo.NAO_EXCLUIDO;
-                }
-
-                if ("inativar".equals(acao)
-                        && !veiculo.isAtivo()) {
-                    conexao.rollback();
-                    return ResultadoStatusVeiculo.JA_INATIVO;
-                }
-
-                if ("reativar".equals(acao)
-                        && veiculo.isAtivo()) {
-                    conexao.rollback();
-                    return ResultadoStatusVeiculo.JA_ATIVO;
-                }
-
-                boolean ativar =
-                        "reativar".equals(acao)
-                        || "restaurar".equals(acao);
-
-                if (ativar) {
-
-                    String sqlCliente = """
-                            SELECT ativo, excluido_em
-                            FROM cliente
-                            WHERE id_cliente = ?
-                            FOR UPDATE
-                            """;
-
-                    try (PreparedStatement comando =
-                            conexao.prepareStatement(sqlCliente)) {
-
-                        comando.setInt(
-                                1, veiculo.getIdCliente());
-
-                        try (ResultSet resultado =
-                                comando.executeQuery()) {
-
-                            if (!resultado.next()
-                                    || !resultado.getBoolean("ativo")
-                                    || resultado.getTimestamp(
-                                            "excluido_em") != null) {
-
-                                conexao.rollback();
-
-                                return ResultadoStatusVeiculo
-                                        .CLIENTE_INATIVO;
-                            }
+                                    .CLIENTE_INATIVO;
                         }
                     }
-
-                } else if (
-                        possuiPendencias(conexao, idVeiculo)) {
-
-                    conexao.rollback();
-
-                    return ResultadoStatusVeiculo
-                            .POSSUI_PENDENCIAS;
                 }
 
-                String sql = switch (acao) {
+            } else if (
+                    possuiPendencias(conexao, idVeiculo)) {
 
-                    case "inativar" -> """
-                            UPDATE veiculo
-                            SET ativo = FALSE
-                            WHERE id_veiculo = ?
-                            """;
+                controle.cancelar();
 
-                    case "excluir" -> """
-                            UPDATE veiculo
-                            SET ativo = FALSE,
-                                excluido_em = CURRENT_TIMESTAMP
-                            WHERE id_veiculo = ?
-                            """;
-
-                    case "reativar", "restaurar" -> """
-                            UPDATE veiculo
-                            SET ativo = TRUE,
-                                excluido_em = NULL
-                            WHERE id_veiculo = ?
-                            """;
-
-                    default ->
-                        throw new SQLException("Acao invalida.");
-                };
-
-                try (PreparedStatement comando =
-                        conexao.prepareStatement(sql)) {
-
-                    comando.setInt(1, idVeiculo);
-                    comando.executeUpdate();
-                }
-
-                conexao.commit();
-
-                return ResultadoStatusVeiculo.SUCESSO;
-
-            } catch (SQLException e) {
-
-                conexao.rollback();
-                throw e;
+                return ResultadoStatusVeiculo
+                        .POSSUI_PENDENCIAS;
             }
-        }
+
+            String sql = switch (acao) {
+
+                case "inativar" -> """
+                        UPDATE veiculo
+                        SET ativo = FALSE
+                        WHERE id_veiculo = ?
+                        """;
+
+                case "excluir" -> """
+                        UPDATE veiculo
+                        SET ativo = FALSE,
+                            excluido_em = CURRENT_TIMESTAMP
+                        WHERE id_veiculo = ?
+                        """;
+
+                case "reativar", "restaurar" -> """
+                        UPDATE veiculo
+                        SET ativo = TRUE,
+                            excluido_em = NULL
+                        WHERE id_veiculo = ?
+                        """;
+
+                default ->
+                    throw new SQLException("Acao invalida.");
+            };
+
+            try (PreparedStatement comando =
+                    conexao.prepareStatement(sql)) {
+
+                comando.setInt(1, idVeiculo);
+                comando.executeUpdate();
+            }
+
+
+            return ResultadoStatusVeiculo.SUCESSO;
+        });
     }
 
     public ResultadoStatusVeiculo inativarVeiculo(

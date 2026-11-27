@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fastsplash.web.db.Conexao;
+import com.fastsplash.web.db.Transacao;
 import com.fastsplash.web.model.Cliente;
 
 public class ClienteDAO {
@@ -378,53 +379,39 @@ public class ClienteDAO {
             int idCliente
     ) throws SQLException {
 
-        try (
-            Connection conexao = Conexao.conectar()
-        ) {
-
-            conexao.setAutoCommit(false);
-
-            try {
-
-                if (!bloquearCliente(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente
-                            .CLIENTE_NAO_ENCONTRADO;
-                }
-
-                if (estaExcluido(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente.JA_EXCLUIDO;
-                }
-
-                if (!consultarStatus(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente
-                            .JA_INATIVO;
-                }
-
-                if (possuiPendencias(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente
-                            .POSSUI_PENDENCIAS;
-                }
-
-                atualizarStatus(
-                        conexao,
-                        idCliente,
-                        false
-                );
-
-                conexao.commit();
-
-                return ResultadoStatusCliente.SUCESSO;
-
-            } catch (SQLException e) {
-
-                conexao.rollback();
-                throw e;
+        return Transacao.executar((conexao, controle) -> {
+            if (!bloquearCliente(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente
+                        .CLIENTE_NAO_ENCONTRADO;
             }
-        }
+
+            if (estaExcluido(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente.JA_EXCLUIDO;
+            }
+
+            if (!consultarStatus(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente
+                        .JA_INATIVO;
+            }
+
+            if (possuiPendencias(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente
+                        .POSSUI_PENDENCIAS;
+            }
+
+            atualizarStatus(
+                    conexao,
+                    idCliente,
+                    false
+            );
+
+
+            return ResultadoStatusCliente.SUCESSO;
+        });
     }
 
     // =========================================
@@ -435,47 +422,33 @@ public class ClienteDAO {
             int idCliente
     ) throws SQLException {
 
-        try (
-            Connection conexao = Conexao.conectar()
-        ) {
-
-            conexao.setAutoCommit(false);
-
-            try {
-
-                if (!bloquearCliente(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente
-                            .CLIENTE_NAO_ENCONTRADO;
-                }
-
-                if (estaExcluido(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente.JA_EXCLUIDO;
-                }
-
-                if (consultarStatus(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente
-                            .JA_ATIVO;
-                }
-
-                atualizarStatus(
-                        conexao,
-                        idCliente,
-                        true
-                );
-
-                conexao.commit();
-
-                return ResultadoStatusCliente.SUCESSO;
-
-            } catch (SQLException e) {
-
-                conexao.rollback();
-                throw e;
+        return Transacao.executar((conexao, controle) -> {
+            if (!bloquearCliente(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente
+                        .CLIENTE_NAO_ENCONTRADO;
             }
-        }
+
+            if (estaExcluido(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente.JA_EXCLUIDO;
+            }
+
+            if (consultarStatus(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente
+                        .JA_ATIVO;
+            }
+
+            atualizarStatus(
+                    conexao,
+                    idCliente,
+                    true
+            );
+
+
+            return ResultadoStatusCliente.SUCESSO;
+        });
     }
 
     // =========================================
@@ -511,48 +484,38 @@ public class ClienteDAO {
             int idCliente
     ) throws SQLException {
 
-        try (Connection conexao = Conexao.conectar()) {
-
-            conexao.setAutoCommit(false);
-
-            try {
-                if (!bloquearCliente(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente.CLIENTE_NAO_ENCONTRADO;
-                }
-
-                if (estaExcluido(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente.JA_EXCLUIDO;
-                }
-
-                if (possuiPendencias(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente.POSSUI_PENDENCIAS;
-                }
-
-                String sql = """
-                        UPDATE cliente
-                        SET ativo = FALSE,
-                            excluido_em = CURRENT_TIMESTAMP
-                        WHERE id_cliente = ?
-                          AND excluido_em IS NULL
-                        """;
-
-                try (PreparedStatement comando =
-                        conexao.prepareStatement(sql)) {
-                    comando.setInt(1, idCliente);
-                    comando.executeUpdate();
-                }
-
-                conexao.commit();
-                return ResultadoStatusCliente.SUCESSO;
-
-            } catch (SQLException e) {
-                conexao.rollback();
-                throw e;
+        return Transacao.executar((conexao, controle) -> {
+            if (!bloquearCliente(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente.CLIENTE_NAO_ENCONTRADO;
             }
-        }
+
+            if (estaExcluido(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente.JA_EXCLUIDO;
+            }
+
+            if (possuiPendencias(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente.POSSUI_PENDENCIAS;
+            }
+
+            String sql = """
+                    UPDATE cliente
+                    SET ativo = FALSE,
+                        excluido_em = CURRENT_TIMESTAMP
+                    WHERE id_cliente = ?
+                      AND excluido_em IS NULL
+                    """;
+
+            try (PreparedStatement comando =
+                    conexao.prepareStatement(sql)) {
+                comando.setInt(1, idCliente);
+                comando.executeUpdate();
+            }
+
+            return ResultadoStatusCliente.SUCESSO;
+        });
     }
 
     // Compatibilidade com chamadas existentes
@@ -572,43 +535,33 @@ public class ClienteDAO {
             int idCliente
     ) throws SQLException {
 
-        try (Connection conexao = Conexao.conectar()) {
-
-            conexao.setAutoCommit(false);
-
-            try {
-                if (!bloquearCliente(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente.CLIENTE_NAO_ENCONTRADO;
-                }
-
-                if (!estaExcluido(conexao, idCliente)) {
-                    conexao.rollback();
-                    return ResultadoStatusCliente.NAO_EXCLUIDO;
-                }
-
-                String sql = """
-                        UPDATE cliente
-                        SET ativo = TRUE,
-                            excluido_em = NULL
-                        WHERE id_cliente = ?
-                          AND excluido_em IS NOT NULL
-                        """;
-
-                try (PreparedStatement comando =
-                        conexao.prepareStatement(sql)) {
-                    comando.setInt(1, idCliente);
-                    comando.executeUpdate();
-                }
-
-                conexao.commit();
-                return ResultadoStatusCliente.SUCESSO;
-
-            } catch (SQLException e) {
-                conexao.rollback();
-                throw e;
+        return Transacao.executar((conexao, controle) -> {
+            if (!bloquearCliente(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente.CLIENTE_NAO_ENCONTRADO;
             }
-        }
+
+            if (!estaExcluido(conexao, idCliente)) {
+                controle.cancelar();
+                return ResultadoStatusCliente.NAO_EXCLUIDO;
+            }
+
+            String sql = """
+                    UPDATE cliente
+                    SET ativo = TRUE,
+                        excluido_em = NULL
+                    WHERE id_cliente = ?
+                      AND excluido_em IS NOT NULL
+                    """;
+
+            try (PreparedStatement comando =
+                    conexao.prepareStatement(sql)) {
+                comando.setInt(1, idCliente);
+                comando.executeUpdate();
+            }
+
+            return ResultadoStatusCliente.SUCESSO;
+        });
     }
 
     public List<Cliente> listarPorStatus(

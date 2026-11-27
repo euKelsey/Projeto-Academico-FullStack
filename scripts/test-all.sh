@@ -58,13 +58,13 @@ listar() {
     echo "=========================================="
     echo "FAST SPLASH - SUITES DISPONIVEIS"
     echo "=========================================="
-    printf "%-22s %8s\n" "Java unitarios/MySQL" "436"
+    printf "%-22s %8s\n" "Java unitarios/MySQL" "456"
     printf "%-22s %8s\n" "API HTTP Java" "197"
     printf "%-22s %8s\n" "Playwright" "534"
     printf "%-22s %8s\n" "Flutter local" "316"
     printf "%-22s %8s\n" "Flutter HTTP real" "12"
     echo "------------------------------------------"
-    printf "%-22s %8s\n" "TOTAL DE REFERENCIA" "1495"
+    printf "%-22s %8s\n" "TOTAL DE REFERENCIA" "1515"
 }
 
 selecionar_tudo() {
@@ -477,7 +477,7 @@ if [[ "$JAVA" == "true" ]]; then
     executar_suite \
         java \
         "Java unitarios e MySQL" \
-        436 \
+        456 \
         bash scripts/test-java-integration.sh
 fi
 

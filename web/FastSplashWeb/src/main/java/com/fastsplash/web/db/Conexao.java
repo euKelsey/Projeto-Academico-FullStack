@@ -1,59 +1,67 @@
-
 package com.fastsplash.web.db;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class Conexao {
+import com.fastsplash.web.config.ConfiguracaoBanco;
+import com.zaxxer.hikari.HikariDataSource;
 
-        private static final String URL = obterVariavel(
-                        "FASTSPLASH_DB_URL",
-                        "jdbc:mysql://localhost:3306/fast_splash");
+public final class Conexao {
 
-        private static final String USUARIO = obterVariavel(
-                        "FASTSPLASH_DB_USER",
-                        "root");
+    private static HikariDataSource pool;
 
-        private static final String SENHA = obterVariavel(
-                        "FASTSPLASH_DB_PASSWORD",
-                        null);
+    private Conexao() {
+    }
 
-        static {
-                try {
-                        Class.forName("com.mysql.cj.jdbc.Driver");
-                } catch (ClassNotFoundException e) {
-                        throw new RuntimeException(
-                                        "Driver do MySQL não encontrado.", e);
-                }
+    public static synchronized void inicializar()
+            throws SQLException {
+
+        if (pool != null && !pool.isClosed()) {
+            return;
         }
 
-        public static Connection conectar()
-                        throws SQLException {
+        try {
 
-                if (SENHA == null || SENHA.isBlank()) {
-                        throw new SQLException(
-                                        "A variável de ambiente "
-                                                        + "FASTSPLASH_DB_PASSWORD "
-                                                        + "não foi configurada.");
-                }
+            pool = new HikariDataSource(
+                    ConfiguracaoBanco.criarConfiguracao());
 
-                return DriverManager.getConnection(
-                                URL,
-                                USUARIO,
-                                SENHA);
+        } catch (RuntimeException e) {
+
+            throw new SQLException(
+                    "Nao foi possivel inicializar "
+                    + "o pool de conexoes.",
+                    e);
         }
+    }
 
-        private static String obterVariavel(
-                        String nome,
-                        String valorPadrao) {
+    private static synchronized HikariDataSource obterPool()
+            throws SQLException {
 
-                String valor = System.getenv(nome);
+        inicializar();
 
-                if (valor == null || valor.isBlank()) {
-                        return valorPadrao;
-                }
+        return pool;
+    }
 
-                return valor;
+    public static Connection conectar()
+            throws SQLException {
+
+        return obterPool().getConnection();
+    }
+
+    public static synchronized boolean estaInicializado() {
+
+        return pool != null && !pool.isClosed();
+    }
+
+    public static synchronized void encerrar() {
+
+        if (pool != null) {
+
+            try {
+                pool.close();
+            } finally {
+                pool = null;
+            }
         }
+    }
 }

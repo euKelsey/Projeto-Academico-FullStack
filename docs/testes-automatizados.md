@@ -45,13 +45,13 @@ Ou:
 
 | Opcao | Suite | Referencia |
 |---|---|---:|
-| --java | Java unitarios e MySQL | 436 |
+| --java | Java unitarios e MySQL | 456 |
 | --api | API HTTP Java | 197 |
 | --web | Playwright Web | 534 |
 | --mobile | Flutter completo | 328 |
 | --mobile-local | Flutter unitarios e widgets | 316 |
 | --mobile-real | Flutter HTTP real | 12 |
-| --all | Todas as suites | 1495 |
+| --all | Todas as suites | 1515 |
 | --list | Listagem de suites | - |
 | --help | Ajuda | - |
 
@@ -317,3 +317,60 @@ Durante a reestruturacao:
 
 A infraestrutura geral de testes foi validada
 em 26/11/2026 com 1495 testes aprovados.
+
+## 17. Evolucao da infraestrutura - Bloco A
+
+Data: 27/11/2026.
+
+Melhorias implementadas:
+
+- Remocao de oito classes legadas.
+- Pool de conexoes HikariCP.
+- Configuracao centralizada do banco.
+- Gerenciamento do ciclo de vida do pool.
+- Gerenciador centralizado de transacoes.
+- Reestruturacao de seis DAOs.
+- Logging SLF4J integrado ao Java.
+- 12 novos testes do pool.
+- 8 novos testes de transacoes.
+
+### Distribuicao atualizada
+
+| Grupo | Testes |
+|---|---:|
+| Java unitarios | 17 |
+| Java integracao MySQL | 439 |
+| API HTTP Java | 197 |
+| Playwright Web | 534 |
+| Flutter unitarios e widgets | 316 |
+| Flutter HTTP real | 12 |
+| Total | 1515 |
+
+### Regressao geral
+
+Comando:
+
+    bash scripts/test-all.sh
+
+| Suite | Testes | Resultado | Duracao |
+|---|---:|---|---|
+| Java unitarios e MySQL | 456 | Aprovado | 00:00:29 |
+| API HTTP Java | 197 | Aprovado | 00:01:01 |
+| Playwright Web | 534 | Aprovado | 00:09:04 |
+| Flutter unitarios e widgets | 316 | Aprovado | 00:00:13 |
+| Flutter HTTP real | 12 | Aprovado | 00:00:24 |
+
+Total: 1515 testes aprovados.
+
+Duracao total: 00:11:14.
+
+Resultado final: SUCESSO.
+
+A referencia anterior de 1495 testes permanece
+registrada como historico da Fase 1.
+
+A nova referencia oficial passa a ser 1515 testes.
+
+Documentacao complementar:
+
+    docs/arquitetura-backend.md
